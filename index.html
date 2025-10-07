@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Workload Management — 3 concurrent max</title>
+  <style>
+    :root { --card:#111418; --ink:#e6e6e6; --muted:#a6a8ad; --accent:#5eead4; --danger:#fca5a5; --ok:#86efac; --bg:#0b0f14; }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; font:16px/1.35 system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif; background:linear-gradient(180deg, #0b0f14, #0a0e12); color:var(--ink); display:flex; align-items:center; justify-content:center; padding:24px}
+    .app{width:100%; max-width:720px; background:var(--card); border:1px solid #1c2128; border-radius:16px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,.35)}
+    h1{margin:0 0 8px; font-size:20px; letter-spacing:.2px}
+    p{margin:6px 0; color:var(--muted)}
+    .grid{display:grid; grid-template-columns:1fr; gap:12px; margin-top:16px}
+    @media (min-width:620px){ .grid{grid-template-columns: 2fr 1fr} }
+    .card{background:#0f141a; border:1px solid #1e252d; border-radius:12px; padding:14px}
+    label{display:block; margin-bottom:6px; color:var(--muted); font-size:14px}
+    select,button{width:100%; padding:12px; border-radius:10px; border:1px solid #24303b; background:#0b1117; color:var(--ink); font-size:15px}
+    button{cursor:pointer; transition:transform .02s ease, filter .15s ease}
+    button:hover{filter:brightness(1.15)}
+    .row{display:flex; gap:10px}
+    .grow{flex:1}
+    .pill{display:inline-flex; align-items:center; gap:8px; padding:8px 10px; border-radius:999px; background:#0b1117; border:1px solid #24303b; font-size:14px}
+    .dot{width:8px; height:8px; border-radius:50%}
+    .dot.green{background:var(--ok)}
+    .dot.red{background:var(--danger)}
+    ul{list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:8px}
+    .name{padding:8px 12px; border-radius:10px; background:#0c1218; border:1px solid #1f2a35}
+    .name.on{outline:1px solid #1a323e; background:#0e171f}
+    .muted{color:var(--muted)}
+    .accent{color:var(--accent)}
+    .foot{margin-top:16px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; color:var(--muted); font-size:13px}
+    .err{color:var(--danger)}
+    .ok{color:var(--ok)}
+    .hint{font-size:12px}
+    .hidden{display:none}
+  </style>
+</head>
+<body>
+  <div class="app" role="application" aria-label="Server usage tracker">
+    <h1>Workload Management</h1>
+    <p>Up to <span class="accent"><strong id="max">3</strong></span> people can use the server at once. Pick your name, then press <em>Start using</em> / <em>Stop</em>.</p>
+
+    <div class="grid">
+      <div class="card">
+        <label for="who">Your name</label>
+        <select id="who" aria-label="Choose your name"></select>
+        <div class="row" style="margin-top:10px">
+          <button id="start" class="grow" aria-live="polite">Start using</button>
+          <button id="stop" class="grow">Stop</button>
+        </div>
+        <p id="msg" class="hint"></p>
+      </div>
+
+      <div class="card">
+        <div class="pill" title="Current occupancy">
+          <span id="status-dot" class="dot red"></span>
+          <strong><span id="count">0</span>/<span id="limit">3</span></strong> using now
+        </div>
+        <ul id="active-list" aria-live="polite" aria-label="Currently using"></ul>
+        <p class="hint muted">Updates in real time for everyone.</p>
+      </div>
+    </div>
+
+    <div class="foot">
+      <span class="muted">Tip: keep this tab open while you're using; click <em>Stop</em> when you finish.</span>
+      <span class="muted">Built with GitHub Pages + Firebase (Firestore).</span>
+    </div>
+  </div>
+
+  <!-- 1) Firebase SDKs (compat builds keep the code succinct) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+  <script>
+    // ===================== SETTINGS =====================
+    // TODO: Replace with your Firebase web app config (Project Settings ➜ General ➜ Your apps ➜ SDK setup & config)
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      // Firestore only needs projectId; the rest are fine to leave as above, but add if provided by console
+    };
+
+    // Team roster (edit these 5 names to your members)
+    const MEMBERS = ["Alice", "Bob", "Charlie", "Dave", "Eve"]; // ← CHANGE ME
+
+    // Maximum concurrent users allowed
+    const MAX_CONCURRENT = 3; // ← change if needed
+    // ====================================================
+
+    // Init Firebase + Firestore
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const statusRef = db.collection("usage").doc("status");
+
+    // DOM helpers
+    const $ = (q) => document.querySelector(q);
+    const whoSel = $("#who");
+    const startBtn = $("#start");
+    const stopBtn = $("#stop");
+    const countEl = $("#count");
+    const limitEls = [$("#limit"), $("#max")];
+    const dot = $("#status-dot");
+    const list = $("#active-list");
+    const msg = $("#msg");
+
+    // Populate names
+    function populateNames(){
+      whoSel.innerHTML = MEMBERS.map(n => `<option value="${n}">${n}</option>`).join("");
+      limitEls.forEach(el => el.textContent = MAX_CONCURRENT);
+    }
+    populateNames();
+
+    // Ensure doc exists
+    statusRef.get().then(snap => { if(!snap.exists){ statusRef.set({ active: [] }); } });
+
+    // Live listener
+    let activeCache = [];
+    statusRef.onSnapshot((snap) => {
+      const data = snap.data() || { active: [] };
+      const active = Array.isArray(data.active) ? data.active : [];
+      activeCache = active;
+
+      // Update occupancy UI
+      countEl.textContent = active.length;
+      dot.classList.toggle('green', active.length > 0 && active.length < MAX_CONCURRENT);
+      dot.classList.toggle('red', active.length >= MAX_CONCURRENT || active.length === 0);
+
+      // Render active list (highlight your name)
+      const me = whoSel.value;
+      list.innerHTML = active.length
+        ? active.map(n => `<li class="name ${n===me ? 'on' : ''}">${n}</li>`).join("")
+        : '<li class="muted">Nobody is using the server.</li>';
+
+      // Update buttons
+      const iAmUsing = active.includes(me);
+      startBtn.disabled = iAmUsing || active.length >= MAX_CONCURRENT;
+      stopBtn.disabled = !iAmUsing;
+
+      // Message
+      if (active.length >= MAX_CONCURRENT && !iAmUsing) {
+        setMsg(`Server is full (${active.length}/${MAX_CONCURRENT}).`, true);
+      } else {
+        setMsg('', false);
+      }
+    });
+
+    // Keep UI in sync when the selected name changes
+    whoSel.addEventListener('change', () => {
+      const me = whoSel.value;
+      const iAmUsing = activeCache.includes(me);
+      startBtn.disabled = iAmUsing || activeCache.length >= MAX_CONCURRENT;
+      stopBtn.disabled = !iAmUsing;
+      // Highlight me
+      list.innerHTML = activeCache.length
+        ? activeCache.map(n => `<li class="name ${n===me ? 'on' : ''}">${n}</li>`).join("")
+        : list.innerHTML;
+      msg.textContent = '';
+    });
+
+    // Transaction: try to add me if capacity allows
+    async function startUsing(){
+      const me = whoSel.value;
+      try {
+        await db.runTransaction(async (tx) => {
+          const doc = await tx.get(statusRef);
+          const data = doc.exists ? doc.data() : { active: [] };
+          const active = Array.from(new Set((data.active || []).filter(Boolean)));
+
+          if (active.includes(me)) return; // already using
+          if (active.length >= MAX_CONCURRENT) throw new Error('FULL');
+
+          active.push(me);
+          tx.set(statusRef, { active }, { merge: true });
+        });
+        setMsg('You are now marked as USING. ✅', false);
+      } catch (e) {
+        if (e.message === 'FULL') setMsg(`Cannot start: server is full (${activeCache.length}/${MAX_CONCURRENT}).`, true);
+        else setMsg('Something went wrong. Please try again.', true);
+        console.error(e);
+      }
+    }
+
+    // Transaction: remove me if present
+    async function stopUsing(){
+      const me = whoSel.value;
+      try {
+        await db.runTransaction(async (tx) => {
+          const doc = await tx.get(statusRef);
+          const data = doc.exists ? doc.data() : { active: [] };
+          let active = Array.from(new Set((data.active || []).filter(Boolean)));
+          if (!active.includes(me)) return; // already not using
+          active = active.filter(n => n !== me);
+          tx.set(statusRef, { active }, { merge: true });
+        });
+        setMsg('You are now marked as NOT USING. ✋', false);
+      } catch (e) {
+        setMsg('Something went wrong. Please try again.', true);
+        console.error(e);
+      }
+    }
+
+    startBtn.addEventListener('click', startUsing);
+    stopBtn.addEventListener('click', stopUsing);
+
+    function setMsg(text, isErr){
+      msg.textContent = text;
+      msg.className = 'hint ' + (isErr ? 'err' : 'ok');
+    }
+  </script>
+</body>
+</html>
