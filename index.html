@@ -1,56 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<!-- Favicon -->
-<link rel="icon" href="favicon.ico" sizes="any">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="manifest" href="site.webmanifest"> <!-- optional -->
-
-<!-- Social preview -->
-<meta property="og:title" content="Workload Management" />
-<meta property="og:description" content="Up to 3 people at a time. Start/Stop to claim a slot." />
-<meta property="og:image" content="site-og-1200x630.png" />
-<meta property="og:type" content="website" />
-<meta name="twitter:card" content="summary_large_image" />
-
-
 <head>
+  <!-- Favicon -->
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="theme-color" content="#0b0f14">
+
+  <!-- Social preview -->
+  <meta property="og:title" content="Workload Management" />
+  <meta property="og:description" content="Up to 3 people at a time. Start/Stop to claim a slot." />
+  <meta property="og:image" content="site-og-1200x630.png" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Workload Management — 3 concurrent max</title>
+
   <style>
-    :root { --card:#111418; --ink:#e6e6e6; --muted:#a6a8ad; --accent:#5eead4; --danger:#fca5a5; --ok:#86efac; --bg:#0b0f14; }
+    :root {
+      --card:#101418; --ink:#e7eaee; --muted:#a6a8ad; --accent:#5eead4; --danger:#fca5a5; --ok:#86efac; --bg:#0b0f14;
+      --radius:16px; --shadow:0 12px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.02);
+      --usage: 0; /* 0..1 set by JS */
+    }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{margin:0; font:16px/1.35 system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif; background:linear-gradient(180deg, #0b0f14, #0a0e12); color:var(--ink); display:flex; align-items:center; justify-content:center; padding:24px}
-    .app{width:100%; max-width:720px; background:var(--card); border:1px solid #1c2128; border-radius:16px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,.35)}
-    h1{margin:0 0 8px; font-size:20px; letter-spacing:.2px}
+    body{
+      margin:0; font:16px/1.35 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+      background:
+        radial-gradient(1100px 650px at 15% 8%, rgba(94,234,212,.07), transparent 60%),
+        radial-gradient(900px 500px at 85% 92%, rgba(134,239,172,.06), transparent 60%),
+        linear-gradient(180deg, #0b0f14, #0a0e12);
+      color:var(--ink); display:flex; align-items:center; justify-content:center; padding:24px
+    }
+    .app{width:100%; max-width:780px; background:var(--card); border:1px solid #1c2128; border-radius:var(--radius); padding:22px; box-shadow:var(--shadow)}
+    h1{margin:0 0 8px; font-size:22px; letter-spacing:.2px}
     p{margin:6px 0; color:var(--muted)}
     .grid{display:grid; grid-template-columns:1fr; gap:12px; margin-top:16px}
-    @media (min-width:620px){ .grid{grid-template-columns: 2fr 1fr} }
+    @media (min-width:720px){ .grid{grid-template-columns:2fr 1fr} }
     .card{background:#0f141a; border:1px solid #1e252d; border-radius:12px; padding:14px}
     label{display:block; margin-bottom:6px; color:var(--muted); font-size:14px}
-    select,button{width:100%; padding:12px; border-radius:10px; border:1px solid #24303b; background:#0b1117; color:var(--ink); font-size:15px}
-    button{cursor:pointer; transition:transform .02s ease, filter .15s ease}
-    button:hover{filter:brightness(1.15)}
+    select,button{width:100%; padding:12px; border-radius:12px; border:1px solid #24303b; background:#0b1117; color:var(--ink); font-size:15px}
+    button{cursor:pointer; transition:transform .02s ease, filter .15s ease, box-shadow .15s ease}
+    button:hover{filter:brightness(1.12)}
+    button:active{transform:translateY(0.5px)}
+    button:disabled{opacity:.55; cursor:not-allowed}
+    #start{background:linear-gradient(180deg,#0f1b22,#0b1117); border-color:#23313d; box-shadow:0 0 0 0 rgba(94,234,212,.0)}
+    #start:not(:disabled):focus-visible,#start:not(:disabled):hover{box-shadow:0 0 0 3px rgba(94,234,212,.20)}
+    #stop{background:linear-gradient(180deg,#191216,#0f0b0d)}
     .row{display:flex; gap:10px}
     .grow{flex:1}
-    .pill{display:inline-flex; align-items:center; gap:8px; padding:8px 10px; border-radius:999px; background:#0b1117; border:1px solid #24303b; font-size:14px}
+
+    .pill{position:relative; display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; background:#0b1117; border:1px solid #24303b; font-size:14px; overflow:hidden}
+    .pill::before{content:""; position:absolute; inset:0; width:calc(var(--usage) * 100%); background:linear-gradient(90deg, rgba(94,234,212,.12), rgba(134,239,172,.10)); pointer-events:none}
     .dot{width:8px; height:8px; border-radius:50%}
-    .dot.green{background:var(--ok)}
-    .dot.red{background:var(--danger)}
+    .dot.green{background:var(--ok); box-shadow:0 0 12px rgba(134,239,172,.45)}
+    .dot.red{background:var(--danger); box-shadow:0 0 10px rgba(252,165,165,.4)}
+
     ul{list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:8px}
-    .name{padding:8px 12px; border-radius:10px; background:#0c1218; border:1px solid #1f2a35}
-    .name.on{outline:1px solid #1a323e; background:#0e171f}
+    .name{padding:8px 12px; border-radius:10px; background:#0c1218; border:1px solid #1f2a35; transition:all .15s ease}
+    .name.on{outline:1px solid rgba(94,234,212,.35); background:#0e171f}
+
     .muted{color:var(--muted)}
     .accent{color:var(--accent)}
     .foot{margin-top:16px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; color:var(--muted); font-size:13px}
+
     .err{color:var(--danger)}
     .ok{color:var(--ok)}
     .hint{font-size:12px}
-    .hidden{display:none}
+
+    /* Toast */
+    .toast{position:fixed; left:50%; bottom:28px; transform:translateX(-50%) translateY(20px); background:#0e141a; color:var(--ink); border:1px solid #23313d; border-radius:12px; padding:10px 14px; opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease; box-shadow:var(--shadow); max-width:86vw}
+    .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+    .toast.err{border-color:#3a1d22; background:#120b0d; color:#ffd6d6}
+    .toast.ok{border-color:#20342c; background:#0e1613}
   </style>
 </head>
 <body>
@@ -85,25 +110,27 @@
     </div>
   </div>
 
-  <!-- 1) Firebase SDKs (compat builds keep the code succinct) -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- Firebase (compat builds keep the code succinct) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
   <script>
     // ===================== SETTINGS =====================
-    // TODO: Replace with your Firebase web app config (Project Settings ➜ General ➜ Your apps ➜ SDK setup & config)
+    // Your Firebase web app config:
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-      projectId: "YOUR_PROJECT_ID",
-      // Firestore only needs projectId; the rest are fine to leave as above, but add if provided by console
+      apiKey: "AIzaSyAKS3Zmv__4RyRfCE4phJRf5U-JSqPy_78",
+      authDomain: "workload-management-9af9f.firebaseapp.com",
+      projectId: "workload-management-9af9f",
+      storageBucket: "workload-management-9af9f.firebasestorage.app",
+      messagingSenderId: "200955908281",
+      appId: "1:200955908281:web:ff31a9850ef28f121bb2e8"
     };
 
-    // Team roster (edit these 5 names to your members)
-    const MEMBERS = ["Deqi", "Sijia", "Yufan", "Yuqing", "Zeyu"]; // ← CHANGE ME
-
-    // Maximum concurrent users allowed
-    const MAX_CONCURRENT = 3; // ← change if needed
+    // Team roster
+    const MEMBERS = ["Deqi", "Sijia", "Yufan", "Yuqing", "Zeyu"];
+    const MAX_CONCURRENT = 3;
     // ====================================================
 
     // Init Firebase + Firestore
@@ -121,6 +148,7 @@
     const dot = $("#status-dot");
     const list = $("#active-list");
     const msg = $("#msg");
+    const toastEl = $("#toast");
 
     // Populate names
     function populateNames(){
@@ -134,7 +162,8 @@
 
     // Live listener
     let activeCache = [];
-let isBusy = false; // blocks double-clicks and shows a nicer UX during transactions
+    let isBusy = false; // blocks double-clicks during transactions
+
     statusRef.onSnapshot((snap) => {
       const data = snap.data() || { active: [] };
       const active = Array.isArray(data.active) ? data.active : [];
@@ -142,6 +171,8 @@ let isBusy = false; // blocks double-clicks and shows a nicer UX during transact
 
       // Update occupancy UI
       countEl.textContent = active.length;
+      const ratio = active.length / MAX_CONCURRENT;
+      document.documentElement.style.setProperty('--usage', String(ratio));
       dot.classList.toggle('green', active.length > 0 && active.length < MAX_CONCURRENT);
       dot.classList.toggle('red', active.length >= MAX_CONCURRENT || active.length === 0);
 
@@ -178,7 +209,7 @@ let isBusy = false; // blocks double-clicks and shows a nicer UX during transact
     });
 
     // Transaction: try to add me if capacity allows
-    async function startUsing(){
+    async function startUsing() {
       const me = whoSel.value;
 
       // prevent double-clicks
@@ -186,35 +217,31 @@ let isBusy = false; // blocks double-clicks and shows a nicer UX during transact
       isBusy = true;
       startBtn.disabled = true;
 
-      // quick client-side checks + heads up
-      if (activeCache.includes(me)) {
-        setMsg('You are already marked as USING.', false);
-        isBusy = false;
-        return;
-      }
-      if (activeCache.length >= MAX_CONCURRENT) {
-        setMsg(`Cannot start: server is full (${activeCache.length}/${MAX_CONCURRENT}).`, true);
-        alert(`Server is full (${activeCache.length}/${MAX_CONCURRENT}). Please try again later.`);
-        isBusy = false;
-        return;
-      }
-      if (activeCache.length === MAX_CONCURRENT - 1) {
-        // last slot warning
-        setMsg('Heads‑up: last slot — checking…', false);
-      } else {
-        setMsg('Reserving a slot…', false);
-      }
-
       try {
+        // quick client-side checks + heads up
+        if (activeCache.includes(me)) {
+          setMsg('You are already marked as USING.', false);
+          return;
+        }
+        if (activeCache.length >= MAX_CONCURRENT) {
+          setMsg(`Cannot start: server is full (${activeCache.length}/${MAX_CONCURRENT}).`, true);
+          alert(`Server is full (${activeCache.length}/${MAX_CONCURRENT}). Please try again later.`);
+          return;
+        }
+        if (activeCache.length === MAX_CONCURRENT - 1) {
+          setMsg('Heads-up: last slot — checking…', false);
+        } else {
+          setMsg('Reserving a slot…', false);
+        }
+
         await db.runTransaction(async (tx) => {
           const doc = await tx.get(statusRef);
           const data = doc.exists ? doc.data() : { active: [] };
           const active = Array.from(new Set((data.active || []).filter(Boolean)));
 
-          if (active.includes(me)) return; // already using (no-op)
-
+          if (active.includes(me)) return;         // already using (no-op)
           if (active.length >= MAX_CONCURRENT) {
-            throw new Error('FULL');
+            throw new Error('FULL');               // someone else filled it
           }
 
           active.push(me);
@@ -223,14 +250,17 @@ let isBusy = false; // blocks double-clicks and shows a nicer UX during transact
 
         setMsg('You are now marked as USING. ✅', false);
 
-        // Optimistic UI update until snapshot arrives
+        // Optimistic UI until the realtime snapshot arrives
         activeCache = Array.from(new Set([...activeCache, me]));
         startBtn.disabled = true;
         stopBtn.disabled = false;
 
       } catch (e) {
         if (e.message === 'FULL') {
-          setMsg(`Someone else grabbed the last slot. Server is full (${activeCache.length}/${MAX_CONCURRENT}).`, true);
+          setMsg(
+            `Someone else grabbed the last slot. Server is full (${activeCache.length}/${MAX_CONCURRENT}).`,
+            true
+          );
           alert('Server just became full. Please try again later.');
         } else {
           setMsg('Something went wrong. Please try again.', true);
@@ -269,6 +299,18 @@ let isBusy = false; // blocks double-clicks and shows a nicer UX during transact
     function setMsg(text, isErr){
       msg.textContent = text;
       msg.className = 'hint ' + (isErr ? 'err' : 'ok');
+      if (!text) { toastEl.classList.remove('show','ok','err'); return; }
+      showToast(text, isErr ? 'err' : 'ok');
+    }
+
+    let toastTimer;
+    function showToast(text, kind='ok'){
+      if (!toastEl) return;
+      toastEl.textContent = text;
+      toastEl.classList.remove('ok','err');
+      toastEl.classList.add('show', kind);
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { toastEl.classList.remove('show'); }, 2200);
     }
   </script>
 </body>
