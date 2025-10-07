@@ -77,12 +77,10 @@
     // ===================== SETTINGS =====================
     // TODO: Replace with your Firebase web app config (Project Settings ➜ General ➜ Your apps ➜ SDK setup & config)
     const firebaseConfig = {
-        apiKey: "AIzaSyAKS3ZmV__4RyRfCE4phJRf5U-JSqPy_78",
-        authDomain: "workload-management-9af9f.firebaseapp.com",
-        projectId: "workload-management-9af9f",
-        storageBucket: "workload-management-9af9f.firebasestorage.app",
-        messagingSenderId: "200959508281",
-        appId: "1:200959508281:web:ff31a9850fe28f121bb2e8"
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      // Firestore only needs projectId; the rest are fine to leave as above, but add if provided by console
     };
 
     // Team roster (edit these 5 names to your members)
@@ -120,6 +118,7 @@
 
     // Live listener
     let activeCache = [];
+let isBusy = false; // blocks double-clicks and shows a nicer UX during transactions
     statusRef.onSnapshot((snap) => {
       const data = snap.data() || { active: [] };
       const active = Array.isArray(data.active) ? data.active : [];
@@ -165,23 +164,64 @@
     // Transaction: try to add me if capacity allows
     async function startUsing(){
       const me = whoSel.value;
+
+      // prevent double-clicks
+      if (isBusy) return;
+      isBusy = true;
+      startBtn.disabled = true;
+
+      // quick client-side checks + heads up
+      if (activeCache.includes(me)) {
+        setMsg('You are already marked as USING.', false);
+        isBusy = false;
+        return;
+      }
+      if (activeCache.length >= MAX_CONCURRENT) {
+        setMsg(`Cannot start: server is full (${activeCache.length}/${MAX_CONCURRENT}).`, true);
+        alert(`Server is full (${activeCache.length}/${MAX_CONCURRENT}). Please try again later.`);
+        isBusy = false;
+        return;
+      }
+      if (activeCache.length === MAX_CONCURRENT - 1) {
+        // last slot warning
+        setMsg('Heads‑up: last slot — checking…', false);
+      } else {
+        setMsg('Reserving a slot…', false);
+      }
+
       try {
         await db.runTransaction(async (tx) => {
           const doc = await tx.get(statusRef);
           const data = doc.exists ? doc.data() : { active: [] };
           const active = Array.from(new Set((data.active || []).filter(Boolean)));
 
-          if (active.includes(me)) return; // already using
-          if (active.length >= MAX_CONCURRENT) throw new Error('FULL');
+          if (active.includes(me)) return; // already using (no-op)
+
+          if (active.length >= MAX_CONCURRENT) {
+            throw new Error('FULL');
+          }
 
           active.push(me);
           tx.set(statusRef, { active }, { merge: true });
         });
+
         setMsg('You are now marked as USING. ✅', false);
+
+        // Optimistic UI update until snapshot arrives
+        activeCache = Array.from(new Set([...activeCache, me]));
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+
       } catch (e) {
-        if (e.message === 'FULL') setMsg(`Cannot start: server is full (${activeCache.length}/${MAX_CONCURRENT}).`, true);
-        else setMsg('Something went wrong. Please try again.', true);
-        console.error(e);
+        if (e.message === 'FULL') {
+          setMsg(`Someone else grabbed the last slot. Server is full (${activeCache.length}/${MAX_CONCURRENT}).`, true);
+          alert('Server just became full. Please try again later.');
+        } else {
+          setMsg('Something went wrong. Please try again.', true);
+          console.error(e);
+        }
+      } finally {
+        isBusy = false;
       }
     }
 
@@ -206,6 +246,9 @@
 
     startBtn.addEventListener('click', startUsing);
     stopBtn.addEventListener('click', stopUsing);
+
+    // Best-effort: auto mark NOT USING when the tab closes
+    window.addEventListener('beforeunload', () => { try { stopUsing(); } catch (_) {} });
 
     function setMsg(text, isErr){
       msg.textContent = text;
