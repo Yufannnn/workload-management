@@ -6,7 +6,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <meta name="theme-color" content="#0b0f14">
+  <meta name="theme-color" content="#060914">
 
   <!-- Social preview -->
   <meta property="og:title" content="Workload Management" />
@@ -20,68 +20,147 @@
   <title>Workload Management — 3 concurrent max</title>
 
   <style>
-    :root {
-      --card:#101418; --ink:#e7eaee; --muted:#a6a8ad; --accent:#5eead4; --danger:#fca5a5; --ok:#86efac; --bg:#0b0f14;
-      --radius:16px; --shadow:0 12px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.02);
-      --usage: 0; /* 0..1 set by JS */
+    /* ===== Light background + Dark console ===== */
+    :root{
+      /* page (light) */
+      --page-ink:#0f172a;      /* body text */
+      --page-muted:#475569;
+      --page-accent:#8b5cf6;
+
+      /* console (dark) */
+      --ink:#e9edff;           /* console text */
+      --muted:#a7b0c6;
+      --accent:#8b5cf6;
+      --ok:#60a5fa;
+      --danger:#fda4af;
+
+      --usage:0;               /* filled via JS */
+      --radius:16px;
+      --shadow:0 12px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.02);
     }
+
     *{box-sizing:border-box}
     html,body{height:100%}
+
+    /* Light page background */
     body{
-      margin:0; font:16px/1.35 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+      margin:0;
+      font:16px/1.35 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+      color:#0f172a;
+
+      /* Soft bluish-lavender background with subtle grid + glows */
       background:
-        radial-gradient(1100px 650px at 15% 8%, rgba(94,234,212,.07), transparent 60%),
-        radial-gradient(900px 500px at 85% 92%, rgba(134,239,172,.06), transparent 60%),
-        linear-gradient(180deg, #0b0f14, #0a0e12);
-      color:var(--ink); display:flex; align-items:center; justify-content:center; padding:24px
+        /* very subtle grid */
+        repeating-linear-gradient(0deg, rgba(2,6,23,.05) 0 2px, transparent 2px 44px),
+        repeating-linear-gradient(90deg, rgba(2,6,23,.04) 0 2px, transparent 2px 44px),
+        /* color glows */
+        radial-gradient(1100px 650px at 12% 8%, rgba(139,92,246,.18), transparent 60%),
+        radial-gradient(900px 520px at 88% 92%, rgba(59,130,246,.16), transparent 60%),
+        /* tinted base (NOT white) */
+        linear-gradient(180deg, #edf2ff 0%, #eaf6ff 100%);
+      display:flex; align-items:center; justify-content:center;
+      padding:24px;
     }
-    .app{width:100%; max-width:780px; background:var(--card); border:1px solid #1c2128; border-radius:var(--radius); padding:22px; box-shadow:var(--shadow)}
-    h1{margin:0 0 8px; font-size:22px; letter-spacing:.2px}
+
+    /* Dark console */
+    .app{
+      background:#0c1020;
+      color:var(--ink);
+      width:100%; max-width:780px;
+      border:1px solid #1a2347;
+      border-radius:var(--radius);
+      padding:22px;
+      box-shadow:var(--shadow), 0 24px 60px rgba(2,6,23,.25);
+    }
+
+    h1{margin:0 0 8px; font-size:22px; letter-spacing:.2px; color:var(--ink)}
     p{margin:6px 0; color:var(--muted)}
+    .accent{color:var(--accent)}
+
     .grid{display:grid; grid-template-columns:1fr; gap:12px; margin-top:16px}
-    @media (min-width:720px){ .grid{grid-template-columns:2fr 1fr} }
-    .card{background:#0f141a; border:1px solid #1e252d; border-radius:12px; padding:14px}
+    @media (min-width:720px){ .grid{grid-template-columns: 2fr 1fr} }
+
+    /* Dark panels inside console */
+    .card{
+      background:#0f1428;
+      border:1px solid #1b2650;
+      border-radius:12px; padding:14px;
+      color:var(--ink);
+    }
+
     label{display:block; margin-bottom:6px; color:var(--muted); font-size:14px}
-    select,button{width:100%; padding:12px; border-radius:12px; border:1px solid #24303b; background:#0b1117; color:var(--ink); font-size:15px}
+
+    /* Inputs & buttons (dark) */
+    select,button{
+      width:100%; padding:12px; border-radius:12px;
+      border:1px solid #1b2a55; background:#0b1226; color:var(--ink); font-size:15px
+    }
     button{cursor:pointer; transition:transform .02s ease, filter .15s ease, box-shadow .15s ease}
     button:hover{filter:brightness(1.12)}
     button:active{transform:translateY(0.5px)}
     button:disabled{opacity:.55; cursor:not-allowed}
-    #start{background:linear-gradient(180deg,#0f1b22,#0b1117); border-color:#23313d; box-shadow:0 0 0 0 rgba(94,234,212,.0)}
-    #start:not(:disabled):focus-visible,#start:not(:disabled):hover{box-shadow:0 0 0 3px rgba(94,234,212,.20)}
-    #stop{background:linear-gradient(180deg,#191216,#0f0b0d)}
+
+    #start{
+      background:linear-gradient(180deg,#12204b,#0b1226);
+      border-color:#22346a;
+      box-shadow:0 0 0 0 rgba(139,92,246,.0)
+    }
+    #start:not(:disabled):focus-visible,#start:not(:disabled):hover{
+      box-shadow:0 0 0 3px rgba(139,92,246,.25)
+    }
+    #stop{
+      background:linear-gradient(180deg,#1a1628,#120c1e);
+      border-color:#2a1f3f;
+    }
+
     .row{display:flex; gap:10px}
     .grow{flex:1}
 
-    .pill{position:relative; display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; background:#0b1117; border:1px solid #24303b; font-size:14px; overflow:hidden}
-    .pill::before{content:""; position:absolute; inset:0; width:calc(var(--usage) * 100%); background:linear-gradient(90deg, rgba(94,234,212,.12), rgba(134,239,172,.10)); pointer-events:none}
+    /* Occupancy pill */
+    .pill{
+      position:relative; display:inline-flex; align-items:center; gap:8px;
+      padding:8px 12px; border-radius:999px; background:#0b1226;
+      border:1px solid #1b2a55; font-size:14px; overflow:hidden; color:var(--ink);
+    }
+    .pill::before{
+      content:""; position:absolute; inset:0; width:calc(var(--usage) * 100%);
+      background:linear-gradient(90deg, rgba(139,92,246,.18), rgba(96,165,250,.16)); pointer-events:none;
+    }
+
     .dot{width:8px; height:8px; border-radius:50%}
-    .dot.green{background:var(--ok); box-shadow:0 0 12px rgba(134,239,172,.45)}
-    .dot.red{background:var(--danger); box-shadow:0 0 10px rgba(252,165,165,.4)}
+    .dot.green{background:var(--ok)}
+    .dot.red{background:var(--danger)}
 
+    /* Active names */
     ul{list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:8px}
-    .name{padding:8px 12px; border-radius:10px; background:#0c1218; border:1px solid #1f2a35; transition:all .15s ease}
-    .name.on{outline:1px solid rgba(94,234,212,.35); background:#0e171f}
+    .name{padding:8px 12px; border-radius:10px; background:#0c1226; border:1px solid #182650; color:var(--ink); transition:all .15s ease}
+    .name.on{outline:1px solid rgba(139,92,246,.35); background:#0e1530}
 
-    .muted{color:var(--muted)}
-    .accent{color:var(--accent)}
     .foot{margin-top:16px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; color:var(--muted); font-size:13px}
 
-    .err{color:var(--danger)}
-    .ok{color:var(--ok)}
+    .err{color:#fca5a5}
+    .ok{color:#86efac}
     .hint{font-size:12px}
 
-    /* Toast */
-    .toast{position:fixed; left:50%; bottom:28px; transform:translateX(-50%) translateY(20px); background:#0e141a; color:var(--ink); border:1px solid #23313d; border-radius:12px; padding:10px 14px; opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease; box-shadow:var(--shadow); max-width:86vw}
+    /* Toast (dark to match console, contrasts with light page) */
+    .toast{
+      position:fixed; left:50%; bottom:28px; transform:translateX(-50%) translateY(20px);
+      background:#0e1428; color:#eef1ff; border:1px solid #1a2a55;
+      border-radius:12px; padding:10px 14px; opacity:0; pointer-events:none;
+      transition:opacity .2s ease, transform .2s ease; box-shadow:var(--shadow); max-width:86vw
+    }
     .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
-    .toast.err{border-color:#3a1d22; background:#120b0d; color:#ffd6d6}
-    .toast.ok{border-color:#20342c; background:#0e1613}
+    .toast.err{border-color:#3a1d22; background:#1a0e15; color:#ffd6d6}
+    .toast.ok{border-color:#1a2a55; background:#0f1b34}
   </style>
+
+
+
 </head>
 <body>
   <div class="app" role="application" aria-label="Server usage tracker">
     <h1>Workload Management</h1>
-    <p>Up to <span class="accent"><strong id="max">3</strong></span> people can use the server at once. Pick your name, then press <em>Start using</em> / <em>Stop</em>.</p>
+    <p>Up to <span class="accent"><strong id="max">3</strong></span> people can use the server at once. Pick your name, then press <em>Start</em> / <em>Stop</em>.</p>
 
     <div class="grid">
       <div class="card">
@@ -118,7 +197,6 @@
 
   <script>
     // ===================== SETTINGS =====================
-    // Your Firebase web app config:
     const firebaseConfig = {
       apiKey: "AIzaSyAKS3Zmv__4RyRfCE4phJRf5U-JSqPy_78",
       authDomain: "workload-management-9af9f.firebaseapp.com",
@@ -128,17 +206,14 @@
       appId: "1:200955908281:web:ff31a9850ef28f121bb2e8"
     };
 
-    // Team roster
     const MEMBERS = ["Deqi", "Sijia", "Yufan", "Yuqing", "Zeyu"];
     const MAX_CONCURRENT = 3;
     // ====================================================
 
-    // Init Firebase + Firestore
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const statusRef = db.collection("usage").doc("status");
 
-    // DOM helpers
     const $ = (q) => document.querySelector(q);
     const whoSel = $("#who");
     const startBtn = $("#start");
@@ -150,44 +225,37 @@
     const msg = $("#msg");
     const toastEl = $("#toast");
 
-    // Populate names
     function populateNames(){
       whoSel.innerHTML = MEMBERS.map(n => `<option value="${n}">${n}</option>`).join("");
       limitEls.forEach(el => el.textContent = MAX_CONCURRENT);
     }
     populateNames();
 
-    // Ensure doc exists
     statusRef.get().then(snap => { if(!snap.exists){ statusRef.set({ active: [] }); } });
 
-    // Live listener
     let activeCache = [];
-    let isBusy = false; // blocks double-clicks during transactions
+    let isBusy = false;
 
     statusRef.onSnapshot((snap) => {
       const data = snap.data() || { active: [] };
       const active = Array.isArray(data.active) ? data.active : [];
       activeCache = active;
 
-      // Update occupancy UI
       countEl.textContent = active.length;
       const ratio = active.length / MAX_CONCURRENT;
       document.documentElement.style.setProperty('--usage', String(ratio));
       dot.classList.toggle('green', active.length > 0 && active.length < MAX_CONCURRENT);
       dot.classList.toggle('red', active.length >= MAX_CONCURRENT || active.length === 0);
 
-      // Render active list (highlight your name)
       const me = whoSel.value;
       list.innerHTML = active.length
         ? active.map(n => `<li class="name ${n===me ? 'on' : ''}">${n}</li>`).join("")
         : '<li class="muted">Nobody is using the server.</li>';
 
-      // Update buttons
       const iAmUsing = active.includes(me);
       startBtn.disabled = iAmUsing || active.length >= MAX_CONCURRENT;
       stopBtn.disabled = !iAmUsing;
 
-      // Message
       if (active.length >= MAX_CONCURRENT && !iAmUsing) {
         setMsg(`Server is full (${active.length}/${MAX_CONCURRENT}).`, true);
       } else {
@@ -195,72 +263,50 @@
       }
     });
 
-    // Keep UI in sync when the selected name changes
     whoSel.addEventListener('change', () => {
       const me = whoSel.value;
       const iAmUsing = activeCache.includes(me);
       startBtn.disabled = iAmUsing || activeCache.length >= MAX_CONCURRENT;
       stopBtn.disabled = !iAmUsing;
-      // Highlight me
       list.innerHTML = activeCache.length
         ? activeCache.map(n => `<li class="name ${n===me ? 'on' : ''}">${n}</li>`).join("")
         : list.innerHTML;
       msg.textContent = '';
     });
 
-    // Transaction: try to add me if capacity allows
     async function startUsing() {
       const me = whoSel.value;
-
-      // prevent double-clicks
       if (isBusy) return;
       isBusy = true;
       startBtn.disabled = true;
 
       try {
-        // quick client-side checks + heads up
-        if (activeCache.includes(me)) {
-          setMsg('You are already marked as USING.', false);
-          return;
-        }
+        if (activeCache.includes(me)) { setMsg('You are already marked as USING.', false); return; }
         if (activeCache.length >= MAX_CONCURRENT) {
           setMsg(`Cannot start: server is full (${activeCache.length}/${MAX_CONCURRENT}).`, true);
           alert(`Server is full (${activeCache.length}/${MAX_CONCURRENT}). Please try again later.`);
           return;
         }
-        if (activeCache.length === MAX_CONCURRENT - 1) {
-          setMsg('Heads-up: last slot — checking…', false);
-        } else {
-          setMsg('Reserving a slot…', false);
-        }
+        setMsg(activeCache.length === MAX_CONCURRENT - 1 ? 'Heads-up: last slot — checking…' : 'Reserving a slot…', false);
 
         await db.runTransaction(async (tx) => {
           const doc = await tx.get(statusRef);
           const data = doc.exists ? doc.data() : { active: [] };
           const active = Array.from(new Set((data.active || []).filter(Boolean)));
-
-          if (active.includes(me)) return;         // already using (no-op)
-          if (active.length >= MAX_CONCURRENT) {
-            throw new Error('FULL');               // someone else filled it
-          }
-
+          if (active.includes(me)) return;
+          if (active.length >= MAX_CONCURRENT) throw new Error('FULL');
           active.push(me);
           tx.set(statusRef, { active }, { merge: true });
         });
 
         setMsg('You are now marked as USING. ✅', false);
-
-        // Optimistic UI until the realtime snapshot arrives
         activeCache = Array.from(new Set([...activeCache, me]));
         startBtn.disabled = true;
         stopBtn.disabled = false;
 
       } catch (e) {
         if (e.message === 'FULL') {
-          setMsg(
-            `Someone else grabbed the last slot. Server is full (${activeCache.length}/${MAX_CONCURRENT}).`,
-            true
-          );
+          setMsg(`Someone else grabbed the last slot. Server is full (${activeCache.length}/${MAX_CONCURRENT}).`, true);
           alert('Server just became full. Please try again later.');
         } else {
           setMsg('Something went wrong. Please try again.', true);
@@ -271,7 +317,6 @@
       }
     }
 
-    // Transaction: remove me if present
     async function stopUsing(){
       const me = whoSel.value;
       try {
@@ -279,7 +324,7 @@
           const doc = await tx.get(statusRef);
           const data = doc.exists ? doc.data() : { active: [] };
           let active = Array.from(new Set((data.active || []).filter(Boolean)));
-          if (!active.includes(me)) return; // already not using
+          if (!active.includes(me)) return;
           active = active.filter(n => n !== me);
           tx.set(statusRef, { active }, { merge: true });
         });
@@ -292,8 +337,6 @@
 
     startBtn.addEventListener('click', startUsing);
     stopBtn.addEventListener('click', stopUsing);
-
-    // Best-effort: auto mark NOT USING when the tab closes
     window.addEventListener('beforeunload', () => { try { stopUsing(); } catch (_) {} });
 
     function setMsg(text, isErr){
@@ -302,7 +345,6 @@
       if (!text) { toastEl.classList.remove('show','ok','err'); return; }
       showToast(text, isErr ? 'err' : 'ok');
     }
-
     let toastTimer;
     function showToast(text, kind='ok'){
       if (!toastEl) return;
