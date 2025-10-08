@@ -20,21 +20,15 @@
   <title>Workload Management — 3 concurrent max</title>
 
   <style>
-    /* ===== Light background + Dark console ===== */
     :root{
-      /* page (light) */
-      --page-ink:#0f172a;      /* body text */
-      --page-muted:#475569;
-      --page-accent:#8b5cf6;
-
-      /* console (dark) */
-      --ink:#e9edff;           /* console text */
+      /* console colors (dark) */
+      --ink:#e9edff;
       --muted:#a7b0c6;
       --accent:#8b5cf6;
       --ok:#60a5fa;
       --danger:#fda4af;
 
-      --usage:0;               /* filled via JS */
+      --usage:0;              /* 0..1 set by JS */
       --radius:16px;
       --shadow:0 12px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.02);
     }
@@ -42,35 +36,65 @@
     *{box-sizing:border-box}
     html,body{height:100%}
 
-    /* Light page background */
+    /* Photo background + soft overlays */
     body{
       margin:0;
       font:16px/1.35 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
       color:#0f172a;
-
-      /* Soft bluish-lavender background with subtle grid + glows */
-      background:
-        /* very subtle grid */
-        repeating-linear-gradient(0deg, rgba(2,6,23,.05) 0 2px, transparent 2px 44px),
-        repeating-linear-gradient(90deg, rgba(2,6,23,.04) 0 2px, transparent 2px 44px),
-        /* color glows */
-        radial-gradient(1100px 650px at 12% 8%, rgba(139,92,246,.18), transparent 60%),
-        radial-gradient(900px 520px at 88% 92%, rgba(59,130,246,.16), transparent 60%),
-        /* tinted base (NOT white) */
-        linear-gradient(180deg, #edf2ff 0%, #eaf6ff 100%);
       display:flex; align-items:center; justify-content:center;
       padding:24px;
+
+      /* 👇 your photo + subtle tint + optional texture grid */
+      background:
+        repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 2px, transparent 2px 44px),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.04) 0 2px, transparent 2px 44px),
+        linear-gradient(rgba(10,15,34,.45), rgba(10,15,34,.45)),
+        url("background.jpg") center / cover no-repeat fixed;
     }
 
-    /* Dark console */
+    /* Splash overlay (click to enter) */
+    .splash{
+      position:fixed; inset:0; z-index:2;
+      display:flex; align-items:center; justify-content:center;
+      text-align:center; color:#eef2ff;
+      background: radial-gradient(60vw 40vh at 50% 20%, rgba(139,92,246,.25), transparent 60%),
+                  radial-gradient(50vw 35vh at 50% 80%, rgba(59,130,246,.22), transparent 60%),
+                  linear-gradient(to bottom, rgba(6,8,18,.55), rgba(6,8,18,.60));
+      transition: opacity .4s ease, visibility 0s linear .4s;
+    }
+    .splash.hide{ opacity:0; visibility:hidden; }
+    .splash .box{
+      background: rgba(12,16,32,.35);
+      border:1px solid rgba(255,255,255,.15);
+      border-radius:16px; padding:24px 28px;
+      backdrop-filter: blur(6px);
+      box-shadow:0 20px 60px rgba(2,6,23,.45);
+      max-width: min(92vw, 680px);
+    }
+    .splash h1{margin:0 0 8px; font-size:28px}
+    .splash p{margin:6px 0 14px; color:#cbd5e1}
+    .splash .enter{
+      display:inline-block; padding:10px 16px; border-radius:999px;
+      background:#11183a; border:1px solid #334155; color:#e5e7eb;
+      cursor:pointer; font-size:15px;
+    }
+    .splash .enter:hover{filter:brightness(1.07)}
+    .splash .hint{font-size:12px; color:#9aa3b2; margin-top:8px}
+
+    /* Console (hidden until splash dismissed) */
     .app{
-      background:#0c1020;
-      color:var(--ink);
+      position:relative; z-index:1;
       width:100%; max-width:780px;
-      border:1px solid #1a2347;
-      border-radius:var(--radius);
-      padding:22px;
-      box-shadow:var(--shadow), 0 24px 60px rgba(2,6,23,.25);
+      background:#0c1020; color:var(--ink);
+      border:1px solid #1a2347; border-radius:var(--radius);
+      padding:22px; box-shadow:var(--shadow), 0 24px 60px rgba(2,6,23,.25);
+
+      opacity:0; transform:translateY(8px) scale(.985);
+      transition: opacity .35s ease, transform .35s ease;
+      pointer-events:none;
+    }
+    .app.show{
+      opacity:1; transform:none; pointer-events:auto;
     }
 
     h1{margin:0 0 8px; font-size:22px; letter-spacing:.2px; color:var(--ink)}
@@ -80,7 +104,6 @@
     .grid{display:grid; grid-template-columns:1fr; gap:12px; margin-top:16px}
     @media (min-width:720px){ .grid{grid-template-columns: 2fr 1fr} }
 
-    /* Dark panels inside console */
     .card{
       background:#0f1428;
       border:1px solid #1b2650;
@@ -90,7 +113,6 @@
 
     label{display:block; margin-bottom:6px; color:var(--muted); font-size:14px}
 
-    /* Inputs & buttons (dark) */
     select,button{
       width:100%; padding:12px; border-radius:12px;
       border:1px solid #1b2a55; background:#0b1226; color:var(--ink); font-size:15px
@@ -116,7 +138,6 @@
     .row{display:flex; gap:10px}
     .grow{flex:1}
 
-    /* Occupancy pill */
     .pill{
       position:relative; display:inline-flex; align-items:center; gap:8px;
       padding:8px 12px; border-radius:999px; background:#0b1226;
@@ -125,13 +146,13 @@
     .pill::before{
       content:""; position:absolute; inset:0; width:calc(var(--usage) * 100%);
       background:linear-gradient(90deg, rgba(139,92,246,.18), rgba(96,165,250,.16)); pointer-events:none;
+      transition: width .35s ease;
     }
 
     .dot{width:8px; height:8px; border-radius:50%}
     .dot.green{background:var(--ok)}
     .dot.red{background:var(--danger)}
 
-    /* Active names */
     ul{list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:8px}
     .name{padding:8px 12px; border-radius:10px; background:#0c1226; border:1px solid #182650; color:var(--ink); transition:all .15s ease}
     .name.on{outline:1px solid rgba(139,92,246,.35); background:#0e1530}
@@ -142,7 +163,6 @@
     .ok{color:#86efac}
     .hint{font-size:12px}
 
-    /* Toast (dark to match console, contrasts with light page) */
     .toast{
       position:fixed; left:50%; bottom:28px; transform:translateX(-50%) translateY(20px);
       background:#0e1428; color:#eef1ff; border:1px solid #1a2a55;
@@ -152,13 +172,24 @@
     .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
     .toast.err{border-color:#3a1d22; background:#1a0e15; color:#ffd6d6}
     .toast.ok{border-color:#1a2a55; background:#0f1b34}
+
+    @media (prefers-reduced-motion: reduce){
+      *{animation:none !important; transition:none !important}
+    }
   </style>
-
-
-
 </head>
 <body>
-  <div class="app" role="application" aria-label="Server usage tracker">
+  <!-- Splash layer -->
+  <div id="splash" class="splash" role="dialog" aria-modal="true" aria-labelledby="splash-title" tabindex="0">
+    <div class="box">
+      <h1 id="splash-title">Workload Management</h1>
+      <p>Click anywhere to open the console.</p>
+      <button id="enterBtn" class="enter" type="button" aria-label="Open console">Open console</button>
+    </div>
+  </div>
+
+  <!-- Console -->
+  <div class="app" role="application" aria-label="Server usage tracker" id="app">
     <h1>Workload Management</h1>
     <p>Up to <span class="accent"><strong id="max">3</strong></span> people can use the server at once. Pick your name, then press <em>Start</em> / <em>Stop</em>.</p>
 
@@ -191,7 +222,7 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <!-- Firebase (compat builds keep the code succinct) -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
@@ -210,6 +241,27 @@
     const MAX_CONCURRENT = 3;
     // ====================================================
 
+    // Splash -> Console
+    const splash = document.getElementById('splash');
+    const enterBtn = document.getElementById('enterBtn');
+    const appEl = document.getElementById('app');
+
+    function showConsole(){
+      splash.classList.add('hide');
+      appEl.classList.add('show');
+      // focus the select for quick action
+      const sel = document.getElementById('who');
+      if (sel) sel.focus({ preventScroll: true });
+    }
+    // click anywhere on splash OR the button
+    splash.addEventListener('click', showConsole);
+    enterBtn.addEventListener('click', (e)=>{ e.stopPropagation(); showConsole(); });
+    splash.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); showConsole(); }});
+    // If you want to auto-skip splash next time, uncomment:
+    // document.addEventListener('DOMContentLoaded', () => { if (localStorage.getItem('wm-entered')==='1'){ showConsole(); }});
+    // enterBtn.addEventListener('click', () => localStorage.setItem('wm-entered','1'));
+
+    // ===== Firebase app logic =====
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const statusRef = db.collection("usage").doc("status");
@@ -339,15 +391,19 @@
     stopBtn.addEventListener('click', stopUsing);
     window.addEventListener('beforeunload', () => { try { stopUsing(); } catch (_) {} });
 
+    // Toast
     function setMsg(text, isErr){
+      const toastEl = document.getElementById('toast');
+      const msg = document.getElementById('msg');
       msg.textContent = text;
       msg.className = 'hint ' + (isErr ? 'err' : 'ok');
+      if (!toastEl) return;
       if (!text) { toastEl.classList.remove('show','ok','err'); return; }
       showToast(text, isErr ? 'err' : 'ok');
     }
     let toastTimer;
     function showToast(text, kind='ok'){
-      if (!toastEl) return;
+      const toastEl = document.getElementById('toast');
       toastEl.textContent = text;
       toastEl.classList.remove('ok','err');
       toastEl.classList.add('show', kind);
