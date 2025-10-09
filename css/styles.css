@@ -1,0 +1,373 @@
+/* ========================================================
+   Workload Management — Styles
+   Sections:
+   1) Theme & Reset
+   2) Page Layout & Background
+   3) Splash (entry overlay)
+   4) App Shell (console)
+   5) Layout (grid, cards, text)
+   6) Controls (buttons, selects, messages, toast)
+   7) Usage Pill
+   8) Status Dot
+   9) Active Names (chips) + rolling border
+   10) Site Footer
+   11) Animations & Motion Pref
+   ======================================================== */
+
+/* ============== 1) THEME & RESET ======================= */
+:root{
+  --ink:#e9edff;
+  --muted:#a7b0c6;
+  --accent:#8b5cf6;
+  --ok:#60a5fa;     /* green/ok */
+  --warn:#fde68a;   /* yellow */
+  --orange:#fdba74; /* orange */
+  --danger:#fda4af; /* red */
+
+  --usage:0;              /* 0..1 set by JS */
+  --radius:16px;
+  --shadow:0 12px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.02);
+}
+
+*{ box-sizing:border-box }
+html,body{ height:100% }
+
+/* ============== 2) PAGE LAYOUT & BACKGROUND ============ */
+body{
+  margin:0;
+  font:16px/1.35 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+  color:#0f172a;
+  display:flex; align-items:center; justify-content:center;
+  padding:24px;
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 2px, transparent 2px 44px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.04) 0 2px, transparent 2px 44px),
+    linear-gradient(rgba(10,15,34,.45), rgba(10,15,34,.45)),
+    url("../assets/background.jpg") center / cover no-repeat fixed;
+}
+
+/* ============== 3) SPLASH (ENTRY OVERLAY) ============== */
+.splash{
+  position:fixed; inset:0; z-index:9999;        /* stay above everything */
+  display:flex; align-items:center; justify-content:center;
+  text-align:center; color:#eef2ff;
+  background:
+    radial-gradient(60vw 40vh at 50% 20%, rgba(139,92,246,.25), transparent 60%),
+    radial-gradient(50vw 35vh at 50% 80%, rgba(59,130,246,.22), transparent 60%),
+    linear-gradient(to bottom, rgba(6,8,18,.55), rgba(6,8,18,.60));
+  transition: opacity .4s ease, visibility 0s linear .4s;
+  pointer-events:auto;                           /* clickable while visible */
+}
+.splash.hide{ opacity:0; visibility:hidden; pointer-events:none; }
+.splash .box{
+  background: rgba(12,16,32,.35);
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:16px; padding:24px 28px;
+  backdrop-filter: blur(6px);
+  box-shadow:0 20px 60px rgba(2,6,23,.45);
+  max-width: min(92vw, 680px);
+}
+.splash h1{ margin:0 0 8px; font-size:28px }
+.splash p{ margin:6px 0 14px; color:#cbd5e1 }
+.splash .enter{
+  display:inline-block; padding:10px 16px; border-radius:999px;
+  background:#11183a; border:1px solid #334155; color:#e5e7eb;
+  cursor:pointer; font-size:15px;
+}
+.splash .enter:hover{ filter:brightness(1.07) }
+.splash .hint{ font-size:12px; color:#9aa3b2; margin-top:8px }
+
+/* ============== 4) APP SHELL (CONSOLE) ================= */
+.app{
+  position:relative; z-index:1;
+  width:100%; max-width:780px;
+
+  background: rgba(12,16,32,.78);
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+  color:var(--ink);
+  border:1px solid rgba(175,195,255,.50);
+  border-radius:var(--radius);
+  padding:22px;
+  box-shadow:
+    0 28px 70px rgba(2,6,23,.45),
+    0 10px 28px rgba(2,6,23,.30),
+    inset 0 1px 0 rgba(255,255,255,.06);
+
+  opacity:0; transform:translateY(8px) scale(.985);
+  transition: opacity .35s ease, transform .35s ease;
+  pointer-events:none;                            /* inert until .show */
+  transform-style: preserve-3d; will-change: transform;
+}
+.app::before{
+  content:"";
+  position:absolute; inset:-1px; border-radius:var(--radius);
+  pointer-events:none;
+  background: linear-gradient(180deg, rgba(170,190,255,.28), rgba(170,190,255,0));
+  mask: radial-gradient(120% 140% at 50% 18%, rgba(0,0,0,.45), transparent 70%);
+}
+.app::after{
+  content:"";
+  position:absolute; inset:0; border-radius:var(--radius);
+  pointer-events:none;
+  box-shadow:
+    0 0 0 1px rgba(175,195,255,.25),
+    0 0 24px rgba(120,150,255,.14);
+}
+.app.show{ opacity:1; transform:none; pointer-events:auto; }
+
+h1{ margin:0 0 8px; font-size:22px; letter-spacing:.2px; color:var(--ink); text-align:center }
+p{ margin:6px 0; color:var(--muted) }
+.accent{ color:var(--accent) }
+
+/* Ensure app never eats splash clicks before shown */
+.app,.app::before,.app::after{ z-index:1 }
+
+/* ============== 5) LAYOUT (GRID, CARDS, TEXT) ========= */
+.grid{ display:grid; grid-template-columns:1fr; gap:12px; margin-top:16px }
+@media (min-width:720px){
+  .grid{ grid-template-columns: 1fr 1fr; align-items: stretch; }
+}
+
+.card{
+  background:#0f1428;
+  border:1px solid rgba(120,150,255,.20);
+  border-radius:12px; padding:14px;
+  color:var(--ink);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
+  display:flex; flex-direction:column;
+}
+
+label{ display:block; margin-bottom:6px; color:var(--muted); font-size:14px }
+
+/* ============== 6) CONTROLS (Buttons, Selects, Messages, Toast) ==== */
+select,button{
+  width:100%; padding:12px; border-radius:12px;
+  border:1px solid #1b2a55; background:#0b1226; color:var(--ink); font-size:15px;
+}
+
+/* Buttons */
+button{ cursor:pointer; transition: transform .05s ease, filter .18s ease, box-shadow .18s ease }
+button:hover{ filter:brightness(1.12) }
+button:active{ transform:translateY(1px) scale(.995) }
+button:disabled{ opacity:.55; cursor:not-allowed }
+
+#start{
+  background:linear-gradient(180deg,#12204b,#0b1226);
+  border-color:#22346a;
+  box-shadow:0 0 0 0 rgba(139,92,246,.0)
+}
+#start:not(:disabled):focus-visible,#start:not(:disabled):hover{ box-shadow:0 6px 22px rgba(139,92,246,.22) }
+
+#stop{
+  background:linear-gradient(180deg,#1a1628,#120c1e);
+  border-color:#2a1f3f;
+}
+#stop:not(:disabled):focus-visible,#stop:not(:disabled):hover{ box-shadow:0 6px 22px rgba(250,204,21,.15) }
+
+.row{ display:flex; gap:10px }
+.grow{ flex:1 }
+
+/* Inline message fade */
+#msg { transition: opacity .25s ease; }
+#msg.is-hiding { opacity: 0; }
+
+/* Toast */
+.toast{
+  position:fixed; left:50%; bottom:28px; transform:translateX(-50%) translateY(20px);
+  background:#0e1428; color:#eef1ff; border:1px solid #1a2a55;
+  border-radius:12px; padding:10px 14px; opacity:0; pointer-events:none;
+  transition:opacity .25s ease, transform .25s ease; box-shadow:var(--shadow); max-width:86vw
+}
+.toast.show{ opacity:1; transform:translateX(-50%) translateY(0) }
+.toast.err{ border-color:#3a1d22; background:#1a0e15; color:#ffd6d6 }
+.toast.ok{ border-color:#1a2a55; background:#0f1b34 }
+
+/* ============== 7) USAGE PILL ========================== */
+.pill{
+  position:relative; display:inline-flex; align-items:center; gap:8px;
+  padding:8px 12px; border-radius:999px; background:#0b1226;
+  border:1px solid #1b2a55; font-size:14px; overflow:hidden; color:var(--ink);
+}
+.pill::before{
+  content:""; position:absolute; inset:0; width:calc(var(--usage) * 100%);
+  background:linear-gradient(90deg, rgba(139,92,246,.18), rgba(96,165,250,.16)); pointer-events:none;
+  transition: width .35s ease;
+}
+.pill::after{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,.08) 20%, transparent 40%);
+  transform: translateX(-120%);
+  animation: shimmer 2.6s infinite;
+}
+.card .pill{ width:100%; display:flex; align-items:center; gap:8px }
+.card .pill strong{ display:inline-flex; align-items:center; gap:6px; white-space:nowrap }
+
+/* Right card helper */
+.card .hint.muted{ margin-top:auto; text-align:right }
+
+/* ============== 8) STATUS DOT (four states) =========== */
+.dot{ width:8px; height:8px; border-radius:50%; position:relative }
+.dot.state-0{ background: var(--ok);     color: var(--ok) }       /* 0 using  -> green */
+.dot.state-1{ background: var(--warn);   color: var(--warn) }     /* 1 using  -> yellow */
+.dot.state-2{ background: var(--orange); color: var(--orange) }   /* 2 using  -> orange */
+.dot.state-3{ background: var(--danger); color: var(--danger) }   /* full     -> red */
+.dot::after{
+  content:""; position:absolute; inset:-6px; border-radius:50%;
+  box-shadow:0 0 0 0 currentColor; opacity:.6; animation: pulse 1.8s infinite;
+}
+
+/* ============== 9) ACTIVE NAMES (CHIPS) ================ */
+ul{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:8px }
+
+.name{
+  position:relative;
+  padding:8px 12px; border-radius:10px;
+  background:#0c1226; border:1px solid #182650; color:var(--ink);
+  transition:all .15s ease;
+  overflow:hidden; isolation:isolate;
+}
+.name.on{ outline:1px solid rgba(139,92,246,.35); background:#0e1530 }
+
+/* Rolling border (mask-free) — only visible on hover/focus */
+.name::after{
+  content:"";
+  position:absolute; inset:-2px; border-radius:inherit; padding:2px; pointer-events:none;
+  background:
+    linear-gradient(#0c1226, #0c1226) padding-box,  /* inner fill */
+    conic-gradient(
+      from 0deg,
+      rgba(139,92,246,0) 0deg,
+      rgba(139,92,246,.65) 90deg,
+      rgba(59,130,246,.65) 180deg,
+      rgba(139,92,246,.65) 270deg,
+      rgba(139,92,246,0) 360deg
+    ) border-box;                                   /* spinning ring */
+  opacity:0; transform-origin:50% 50%;
+  animation: spin 1.2s linear infinite; animation-play-state: paused;
+  transition: opacity .18s ease; will-change: transform;
+}
+.name:hover::after, .name:focus-visible::after{ opacity:1; animation-play-state: running; }
+
+/* Keyboard focus outline */
+.name:focus-visible{ outline:2px solid rgba(139,92,246,.55); outline-offset:2px }
+
+/* ============== 10) SITE FOOTER ======================= */
+.site-foot{
+  position:fixed; left:0; right:0; bottom:10px;
+  display:flex; gap:12px; justify-content:center; align-items:center;
+  padding:8px 16px;
+  font-size:13px; color:var(--muted);
+  pointer-events:none;
+}
+.site-foot > *{ pointer-events:auto }
+.site-foot::before{
+  content:"";
+  position:absolute; inset:0 8px; height:100%;
+  border-radius:999px;
+  background: rgba(10,14,30,.35);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  border:1px solid rgba(160,180,255,.22);
+  z-index:-1;
+}
+
+/* ============== 11) ANIMATIONS & MOTION PREF ========= */
+@keyframes shimmer { to { transform: translateX(120%); } }
+@keyframes pulse {
+  0% { box-shadow:0 0 0 0 currentColor; opacity:.55; }
+  60%{ box-shadow:0 0 0 10px rgba(0,0,0,0); opacity:0; }
+  100%{ box-shadow:0 0 0 0 rgba(0,0,0,0); opacity:0; }
+}
+@keyframes itemIn { to { opacity:1; transform:none; } }
+@keyframes bump { 0%{transform:scale(1)} 40%{transform:scale(1.18)} 100%{transform:scale(1)} }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+.reveal-child > * { opacity:0; transform:translateY(6px) }
+.reveal-child.show > * { animation: itemIn .45s ease forwards }
+.reveal-child.show > *:nth-child(2){ animation-delay: .06s }
+.reveal-child.show > *:nth-child(3){ animation-delay: .12s }
+
+.bump { animation: bump .35s ease }
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce){
+  *{ animation:none !important; transition:none !important }
+  .app{ transform:none !important }
+}
+
+/* ============== CUSTOM “COOL SELECT” ==================
+   We keep the native <select> for value/AT. JS wraps it in a
+   .cool-select with a button+panel. The native select gets
+   class="visually-hidden". ================================= */
+.visually-hidden{
+  position:absolute !important; left:-9999px !important; width:1px !important; height:1px !important;
+  overflow:hidden !important; clip:rect(0 0 0 0) !important; white-space:nowrap !important; border:0 !important; padding:0 !important; margin:0 !important;
+}
+
+.cool-select{ position:relative; font-size:15px }
+.cool-select__button{
+  width:100%; display:flex; align-items:center; justify-content:space-between; gap:10px;
+  height:46px; padding:0 14px;
+  border-radius:12px; border:1px solid rgba(130,160,255,.28);
+  background: linear-gradient(180deg, rgba(28,36,70,.28), rgba(5,10,26,.42));
+  color:var(--ink);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 4px 18px rgba(2,6,23,.18);
+  cursor:pointer;
+  transition: box-shadow .2s ease, border-color .2s ease, transform .05s ease, filter .18s ease;
+}
+.cool-select__button:hover{ filter:brightness(1.06); border-color: rgba(160,185,255,.45) }
+.cool-select__button:active{ transform: translateY(.5px) }
+.cool-select__button:focus-visible{
+  outline:none;
+  box-shadow:
+    0 0 0 3px rgba(139,92,246,.28),
+    0 0 0 1px rgba(139,92,246,.55) inset,
+    inset 0 1px 0 rgba(255,255,255,.08);
+  border-color: rgba(139,92,246,.55);
+}
+.cool-select__label{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+
+/* Jewel that spins only when open / pressed */
+.cool-select__chev{ width:18px; height:18px; position:relative; flex:0 0 auto; border-radius:50% }
+.cool-select__chev::before{
+  content:""; position:absolute; inset:0; border-radius:50%;
+  background: conic-gradient(from 0deg,
+    rgba(139,92,246,0) 0deg,
+    rgba(139,92,246,.65) 90deg,
+    rgba(59,130,246,.65) 180deg,
+    rgba(139,92,246,.65) 270deg,
+    rgba(139,92,246,0) 360deg);
+  opacity:0; animation: spin 1.6s linear infinite; animation-play-state: paused;
+  transition: opacity .15s ease;
+}
+.cool-select[aria-expanded="true"] .cool-select__chev::before{
+  opacity:.85; animation-play-state: running;
+}
+.cool-select__button:active .cool-select__chev::before{
+  opacity:.75; animation-play-state: running;
+}
+
+/* Dropdown panel + options */
+.cool-select__list{
+  position:absolute; z-index:50; left:0; right:0; top: calc(100% + 6px);
+  background:#0f1428; border:1px solid rgba(120,150,255,.25);
+  border-radius:12px; box-shadow:0 20px 40px rgba(2,6,23,.45), inset 0 1px 0 rgba(255,255,255,.03);
+  padding:6px; max-height:220px; overflow:auto;
+  opacity:0; transform: translateY(6px) scale(.98); pointer-events:none;
+  transition: opacity .18s ease, transform .18s ease;
+}
+.cool-select[aria-expanded="true"] .cool-select__list{ opacity:1; transform:none; pointer-events:auto }
+
+.cool-option{
+  list-style:none; padding:10px; border-radius:10px; color:var(--ink);
+  cursor:pointer; display:flex; align-items:center; justify-content:space-between;
+  transition: background .12s ease, outline-color .12s ease;
+}
+.cool-option[data-selected="true"]{ background:#0e1530; outline:1px solid rgba(139,92,246,.35) }
+.cool-option:hover{ background:#0c1226 }
+.cool-option:focus{ outline:2px solid rgba(139,92,246,.55); outline-offset:2px }
+
+/* Reduced motion for cool select */
+@media (prefers-reduced-motion: reduce){
+  .cool-select__chev::before{ animation: none }
+}

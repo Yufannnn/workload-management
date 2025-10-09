@@ -1,185 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Favicon -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Workload Management — 3 concurrent max</title>
+
+  <!-- Icons & social -->
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <meta name="theme-color" content="#060914">
-
-  <!-- Social preview -->
   <meta property="og:title" content="Workload Management" />
   <meta property="og:description" content="Up to 3 people at a time. Start/Stop to claim a slot." />
   <meta property="og:image" content="site-og-1200x630.png" />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary_large_image" />
 
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Workload Management — 3 concurrent max</title>
-
-  <style>
-    :root{
-      /* console colors (dark) */
-      --ink:#e9edff;
-      --muted:#a7b0c6;
-      --accent:#8b5cf6;
-      --ok:#60a5fa;
-      --danger:#fda4af;
-
-      --usage:0;              /* 0..1 set by JS */
-      --radius:16px;
-      --shadow:0 12px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.02);
-    }
-
-    *{box-sizing:border-box}
-    html,body{height:100%}
-
-    /* Photo background + soft overlays */
-    body{
-      margin:0;
-      font:16px/1.35 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
-      color:#0f172a;
-      display:flex; align-items:center; justify-content:center;
-      padding:24px;
-
-      /* 👇 your photo + subtle tint + optional texture grid */
-      background:
-        repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 2px, transparent 2px 44px),
-        repeating-linear-gradient(90deg, rgba(255,255,255,.04) 0 2px, transparent 2px 44px),
-        linear-gradient(rgba(10,15,34,.45), rgba(10,15,34,.45)),
-        url("background.jpg") center / cover no-repeat fixed;
-    }
-
-    /* Splash overlay (click to enter) */
-    .splash{
-      position:fixed; inset:0; z-index:2;
-      display:flex; align-items:center; justify-content:center;
-      text-align:center; color:#eef2ff;
-      background: radial-gradient(60vw 40vh at 50% 20%, rgba(139,92,246,.25), transparent 60%),
-                  radial-gradient(50vw 35vh at 50% 80%, rgba(59,130,246,.22), transparent 60%),
-                  linear-gradient(to bottom, rgba(6,8,18,.55), rgba(6,8,18,.60));
-      transition: opacity .4s ease, visibility 0s linear .4s;
-    }
-    .splash.hide{ opacity:0; visibility:hidden; }
-    .splash .box{
-      background: rgba(12,16,32,.35);
-      border:1px solid rgba(255,255,255,.15);
-      border-radius:16px; padding:24px 28px;
-      backdrop-filter: blur(6px);
-      box-shadow:0 20px 60px rgba(2,6,23,.45);
-      max-width: min(92vw, 680px);
-    }
-    .splash h1{margin:0 0 8px; font-size:28px}
-    .splash p{margin:6px 0 14px; color:#cbd5e1}
-    .splash .enter{
-      display:inline-block; padding:10px 16px; border-radius:999px;
-      background:#11183a; border:1px solid #334155; color:#e5e7eb;
-      cursor:pointer; font-size:15px;
-    }
-    .splash .enter:hover{filter:brightness(1.07)}
-    .splash .hint{font-size:12px; color:#9aa3b2; margin-top:8px}
-
-    /* Console (hidden until splash dismissed) */
-    .app{
-      position:relative; z-index:1;
-      width:100%; max-width:780px;
-      background:#0c1020; color:var(--ink);
-      border:1px solid #1a2347; border-radius:var(--radius);
-      padding:22px; box-shadow:var(--shadow), 0 24px 60px rgba(2,6,23,.25);
-
-      opacity:0; transform:translateY(8px) scale(.985);
-      transition: opacity .35s ease, transform .35s ease;
-      pointer-events:none;
-    }
-    .app.show{
-      opacity:1; transform:none; pointer-events:auto;
-    }
-
-    h1{margin:0 0 8px; font-size:22px; letter-spacing:.2px; color:var(--ink)}
-    p{margin:6px 0; color:var(--muted)}
-    .accent{color:var(--accent)}
-
-    .grid{display:grid; grid-template-columns:1fr; gap:12px; margin-top:16px}
-    @media (min-width:720px){ .grid{grid-template-columns: 2fr 1fr} }
-
-    .card{
-      background:#0f1428;
-      border:1px solid #1b2650;
-      border-radius:12px; padding:14px;
-      color:var(--ink);
-    }
-
-    label{display:block; margin-bottom:6px; color:var(--muted); font-size:14px}
-
-    select,button{
-      width:100%; padding:12px; border-radius:12px;
-      border:1px solid #1b2a55; background:#0b1226; color:var(--ink); font-size:15px
-    }
-    button{cursor:pointer; transition:transform .02s ease, filter .15s ease, box-shadow .15s ease}
-    button:hover{filter:brightness(1.12)}
-    button:active{transform:translateY(0.5px)}
-    button:disabled{opacity:.55; cursor:not-allowed}
-
-    #start{
-      background:linear-gradient(180deg,#12204b,#0b1226);
-      border-color:#22346a;
-      box-shadow:0 0 0 0 rgba(139,92,246,.0)
-    }
-    #start:not(:disabled):focus-visible,#start:not(:disabled):hover{
-      box-shadow:0 0 0 3px rgba(139,92,246,.25)
-    }
-    #stop{
-      background:linear-gradient(180deg,#1a1628,#120c1e);
-      border-color:#2a1f3f;
-    }
-
-    .row{display:flex; gap:10px}
-    .grow{flex:1}
-
-    .pill{
-      position:relative; display:inline-flex; align-items:center; gap:8px;
-      padding:8px 12px; border-radius:999px; background:#0b1226;
-      border:1px solid #1b2a55; font-size:14px; overflow:hidden; color:var(--ink);
-    }
-    .pill::before{
-      content:""; position:absolute; inset:0; width:calc(var(--usage) * 100%);
-      background:linear-gradient(90deg, rgba(139,92,246,.18), rgba(96,165,250,.16)); pointer-events:none;
-      transition: width .35s ease;
-    }
-
-    .dot{width:8px; height:8px; border-radius:50%}
-    .dot.green{background:var(--ok)}
-    .dot.red{background:var(--danger)}
-
-    ul{list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:8px}
-    .name{padding:8px 12px; border-radius:10px; background:#0c1226; border:1px solid #182650; color:var(--ink); transition:all .15s ease}
-    .name.on{outline:1px solid rgba(139,92,246,.35); background:#0e1530}
-
-    .foot{margin-top:16px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; color:var(--muted); font-size:13px}
-
-    .err{color:#fca5a5}
-    .ok{color:#86efac}
-    .hint{font-size:12px}
-
-    .toast{
-      position:fixed; left:50%; bottom:28px; transform:translateX(-50%) translateY(20px);
-      background:#0e1428; color:#eef1ff; border:1px solid #1a2a55;
-      border-radius:12px; padding:10px 14px; opacity:0; pointer-events:none;
-      transition:opacity .2s ease, transform .2s ease; box-shadow:var(--shadow); max-width:86vw
-    }
-    .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
-    .toast.err{border-color:#3a1d22; background:#1a0e15; color:#ffd6d6}
-    .toast.ok{border-color:#1a2a55; background:#0f1b34}
-
-    @media (prefers-reduced-motion: reduce){
-      *{animation:none !important; transition:none !important}
-    }
-  </style>
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <!-- Splash layer -->
+  <!-- Splash -->
   <div id="splash" class="splash" role="dialog" aria-modal="true" aria-labelledby="splash-title" tabindex="0">
     <div class="box">
       <h1 id="splash-title">Workload Management</h1>
@@ -191,9 +32,11 @@
   <!-- Console -->
   <div class="app" role="application" aria-label="Server usage tracker" id="app">
     <h1>Workload Management</h1>
-    <p>Up to <span class="accent"><strong id="max">3</strong></span> people can use the server at once. Pick your name, then press <em>Start</em> / <em>Stop</em>.</p>
+    <p>Up to <span class="accent"><strong id="max">3</strong></span> people can use the server at once.
+      Pick your name, then press <em>Start</em> / <em>Stop</em>.
+    </p>
 
-    <div class="grid">
+    <div class="grid reveal-child">
       <div class="card">
         <label for="who">Your name</label>
         <select id="who" aria-label="Choose your name"></select>
@@ -213,203 +56,30 @@
         <p class="hint muted">Updates in real time for everyone.</p>
       </div>
     </div>
-
-    <div class="foot">
-      <span class="muted">Tip: keep this tab open while you're using; click <em>Stop</em> when you finish.</span>
-      <span class="muted">Built with GitHub Pages + Firebase (Firestore).</span>
-    </div>
   </div>
+
+  <!-- Site footer (outside console) -->
+  <footer class="site-foot" role="contentinfo">
+    <span>Built with GitHub Pages + Firebase (Firestore).</span>
+    <span>© 2025 Yufannnn</span>
+  </footer>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <!-- ES modules: Firebase CDN + your modules -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-  <script>
-    // ===================== SETTINGS =====================
-    const firebaseConfig = {
-      apiKey: "AIzaSyAKS3Zmv__4RyRfCE4phJRf5U-JSqPy_78",
-      authDomain: "workload-management-9af9f.firebaseapp.com",
-      projectId: "workload-management-9af9f",
-      storageBucket: "workload-management-9af9f.firebasestorage.app",
-      messagingSenderId: "200955908281",
-      appId: "1:200955908281:web:ff31a9850ef28f121bb2e8"
-    };
+    import { firebaseConfig } from "./js/config.js";
+    import { initFirebase } from "./js/firebase.js";
+    import { startApp } from "./js/app.js";
 
-    const MEMBERS = ["Deqi", "Sijia", "Yufan", "Yuqing", "Zeyu"];
-    const MAX_CONCURRENT = 3;
-    // ====================================================
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
 
-    // Splash -> Console
-    const splash = document.getElementById('splash');
-    const enterBtn = document.getElementById('enterBtn');
-    const appEl = document.getElementById('app');
-
-    function showConsole(){
-      splash.classList.add('hide');
-      appEl.classList.add('show');
-      // focus the select for quick action
-      const sel = document.getElementById('who');
-      if (sel) sel.focus({ preventScroll: true });
-    }
-    // click anywhere on splash OR the button
-    splash.addEventListener('click', showConsole);
-    enterBtn.addEventListener('click', (e)=>{ e.stopPropagation(); showConsole(); });
-    splash.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); showConsole(); }});
-    // If you want to auto-skip splash next time, uncomment:
-    // document.addEventListener('DOMContentLoaded', () => { if (localStorage.getItem('wm-entered')==='1'){ showConsole(); }});
-    // enterBtn.addEventListener('click', () => localStorage.setItem('wm-entered','1'));
-
-    // ===== Firebase app logic =====
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const statusRef = db.collection("usage").doc("status");
-
-    const $ = (q) => document.querySelector(q);
-    const whoSel = $("#who");
-    const startBtn = $("#start");
-    const stopBtn = $("#stop");
-    const countEl = $("#count");
-    const limitEls = [$("#limit"), $("#max")];
-    const dot = $("#status-dot");
-    const list = $("#active-list");
-    const msg = $("#msg");
-    const toastEl = $("#toast");
-
-    function populateNames(){
-      whoSel.innerHTML = MEMBERS.map(n => `<option value="${n}">${n}</option>`).join("");
-      limitEls.forEach(el => el.textContent = MAX_CONCURRENT);
-    }
-    populateNames();
-
-    statusRef.get().then(snap => { if(!snap.exists){ statusRef.set({ active: [] }); } });
-
-    let activeCache = [];
-    let isBusy = false;
-
-    statusRef.onSnapshot((snap) => {
-      const data = snap.data() || { active: [] };
-      const active = Array.isArray(data.active) ? data.active : [];
-      activeCache = active;
-
-      countEl.textContent = active.length;
-      const ratio = active.length / MAX_CONCURRENT;
-      document.documentElement.style.setProperty('--usage', String(ratio));
-      dot.classList.toggle('green', active.length > 0 && active.length < MAX_CONCURRENT);
-      dot.classList.toggle('red', active.length >= MAX_CONCURRENT || active.length === 0);
-
-      const me = whoSel.value;
-      list.innerHTML = active.length
-        ? active.map(n => `<li class="name ${n===me ? 'on' : ''}">${n}</li>`).join("")
-        : '<li class="muted">Nobody is using the server.</li>';
-
-      const iAmUsing = active.includes(me);
-      startBtn.disabled = iAmUsing || active.length >= MAX_CONCURRENT;
-      stopBtn.disabled = !iAmUsing;
-
-      if (active.length >= MAX_CONCURRENT && !iAmUsing) {
-        setMsg(`Server is full (${active.length}/${MAX_CONCURRENT}).`, true);
-      } else {
-        setMsg('', false);
-      }
-    });
-
-    whoSel.addEventListener('change', () => {
-      const me = whoSel.value;
-      const iAmUsing = activeCache.includes(me);
-      startBtn.disabled = iAmUsing || activeCache.length >= MAX_CONCURRENT;
-      stopBtn.disabled = !iAmUsing;
-      list.innerHTML = activeCache.length
-        ? activeCache.map(n => `<li class="name ${n===me ? 'on' : ''}">${n}</li>`).join("")
-        : list.innerHTML;
-      msg.textContent = '';
-    });
-
-    async function startUsing() {
-      const me = whoSel.value;
-      if (isBusy) return;
-      isBusy = true;
-      startBtn.disabled = true;
-
-      try {
-        if (activeCache.includes(me)) { setMsg('You are already marked as USING.', false); return; }
-        if (activeCache.length >= MAX_CONCURRENT) {
-          setMsg(`Cannot start: server is full (${activeCache.length}/${MAX_CONCURRENT}).`, true);
-          alert(`Server is full (${activeCache.length}/${MAX_CONCURRENT}). Please try again later.`);
-          return;
-        }
-        setMsg(activeCache.length === MAX_CONCURRENT - 1 ? 'Heads-up: last slot — checking…' : 'Reserving a slot…', false);
-
-        await db.runTransaction(async (tx) => {
-          const doc = await tx.get(statusRef);
-          const data = doc.exists ? doc.data() : { active: [] };
-          const active = Array.from(new Set((data.active || []).filter(Boolean)));
-          if (active.includes(me)) return;
-          if (active.length >= MAX_CONCURRENT) throw new Error('FULL');
-          active.push(me);
-          tx.set(statusRef, { active }, { merge: true });
-        });
-
-        setMsg('You are now marked as USING. ✅', false);
-        activeCache = Array.from(new Set([...activeCache, me]));
-        startBtn.disabled = true;
-        stopBtn.disabled = false;
-
-      } catch (e) {
-        if (e.message === 'FULL') {
-          setMsg(`Someone else grabbed the last slot. Server is full (${activeCache.length}/${MAX_CONCURRENT}).`, true);
-          alert('Server just became full. Please try again later.');
-        } else {
-          setMsg('Something went wrong. Please try again.', true);
-          console.error(e);
-        }
-      } finally {
-        isBusy = false;
-      }
-    }
-
-    async function stopUsing(){
-      const me = whoSel.value;
-      try {
-        await db.runTransaction(async (tx) => {
-          const doc = await tx.get(statusRef);
-          const data = doc.exists ? doc.data() : { active: [] };
-          let active = Array.from(new Set((data.active || []).filter(Boolean)));
-          if (!active.includes(me)) return;
-          active = active.filter(n => n !== me);
-          tx.set(statusRef, { active }, { merge: true });
-        });
-        setMsg('You are now marked as NOT USING. ✋', false);
-      } catch (e) {
-        setMsg('Something went wrong. Please try again.', true);
-        console.error(e);
-      }
-    }
-
-    startBtn.addEventListener('click', startUsing);
-    stopBtn.addEventListener('click', stopUsing);
-    window.addEventListener('beforeunload', () => { try { stopUsing(); } catch (_) {} });
-
-    // Toast
-    function setMsg(text, isErr){
-      const toastEl = document.getElementById('toast');
-      const msg = document.getElementById('msg');
-      msg.textContent = text;
-      msg.className = 'hint ' + (isErr ? 'err' : 'ok');
-      if (!toastEl) return;
-      if (!text) { toastEl.classList.remove('show','ok','err'); return; }
-      showToast(text, isErr ? 'err' : 'ok');
-    }
-    let toastTimer;
-    function showToast(text, kind='ok'){
-      const toastEl = document.getElementById('toast');
-      toastEl.textContent = text;
-      toastEl.classList.remove('ok','err');
-      toastEl.classList.add('show', kind);
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => { toastEl.classList.remove('show'); }, 2200);
-    }
+    initFirebase(db);
+    startApp();
   </script>
 </body>
 </html>
