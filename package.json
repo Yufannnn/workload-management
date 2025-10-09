@@ -1,0 +1,25 @@
+{
+  "name": "workload-management",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Yufannnn/workload-management.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Yufannnn/workload-management/issues"
+  },
+  "homepage": "https://github.com/Yufannnn/workload-management#readme",
+  "dependencies": {
+    "vite": "^7.1.9"
+  }
+}

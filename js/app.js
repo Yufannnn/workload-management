@@ -27,12 +27,23 @@ let wasFull = false; // track "full" state to prevent spammy repeats
 const TOAST_ENABLED = false;
 
 /* ---------- UI helpers ---------- */
-function showConsole(){
+function showConsole(e){
+  // where the user clicked (fallback: center)
+  const x = (e?.clientX ?? window.innerWidth/2) + 'px';
+  const y = (e?.clientY ?? window.innerHeight/2) + 'px';
+
+  appEl.style.setProperty('--reveal-x', x);
+  appEl.style.setProperty('--reveal-y', y);
+
   splash.classList.add('hide');
-  appEl.classList.add('show');
+  appEl.classList.add('reveal');      // run the clip-path
+  appEl.classList.add('show');        // keep your existing fade/scale
   document.querySelector('.reveal-child')?.classList.add('show');
-  if (whoSel) whoSel.focus({ preventScroll: true });
+  document.getElementById('who')?.focus({ preventScroll: true });
+  appEl.classList.add('glint');
+  setTimeout(() => appEl.classList.remove('glint'), 800);
 }
+
 
 function populateNames(){
   whoSel.innerHTML = MEMBERS.map(n => `<option value="${n}">${n}</option>`).join("");
