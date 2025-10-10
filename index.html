@@ -11,6 +11,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <meta name="theme-color" content="#060914">
+
   <meta property="og:title" content="Workload Management" />
   <meta property="og:description" content="Up to 3 people at a time. Start/Stop to claim a slot." />
   <meta property="og:image" content="site-og-1200x630.png" />
@@ -20,40 +21,63 @@
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+  <!-- Top-right language switcher (outside console) -->
+  <div class="lang-switch" aria-label="Language picker">
+    <label class="sr-only" for="lang">Language</label>
+    <select id="lang" aria-label="Language">
+      <option value="en">English</option>
+      <option value="zh">中文</option>
+      <option value="es">Español</option>
+      <option value="ru">Русский</option>
+      <option value="fr">Français</option>
+      <option value="de">Deutsch</option>
+      <option value="ja">日本語</option>
+      <option value="ko">한국어</option>
+    </select>
+  </div>
+
   <!-- Splash -->
   <div id="splash" class="splash" role="dialog" aria-modal="true" aria-labelledby="splash-title" tabindex="0">
     <div class="box">
-      <h1 id="splash-title">Workload Management</h1>
-      <p>Click anywhere to open the console.</p>
-      <button id="enterBtn" class="enter" type="button" aria-label="Open console">Open console</button>
+      <h1 id="splash-title" data-i18n="title">Workload Management</h1>
+      <p id="splash-help" data-i18n="splash_help">Click anywhere to open the console.</p>
+      <button id="enterBtn" class="enter" type="button" aria-label="Open console" data-i18n="open_console">Open console</button>
     </div>
   </div>
 
   <!-- Console -->
   <div class="app" role="application" aria-label="Server usage tracker" id="app">
-    <h1>Workload Management</h1>
-    <p>Up to <span class="accent"><strong id="max">3</strong></span> people can use the server at once.
+    <h1 data-i18n="title">Workload Management</h1>
+
+    <p data-i18n="intro">
+      Up to <span class="accent"><strong id="max">3</strong></span> people can use the server at once.
       Pick your name, then press <em>Start</em> / <em>Stop</em>.
     </p>
 
     <div class="grid reveal-child">
+      <!-- Left card: controls -->
       <div class="card">
-        <label for="who">Your name</label>
+        <label for="who" data-i18n="your_name">Your name</label>
         <select id="who" aria-label="Choose your name"></select>
+
         <div class="row" style="margin-top:10px">
-          <button id="start" class="grow" aria-live="polite">Start</button>
-          <button id="stop" class="grow">Stop</button>
+          <button id="start" class="grow" aria-live="polite" data-i18n="start">Start</button>
+          <button id="stop" class="grow" data-i18n="stop">Stop</button>
         </div>
+
         <p id="msg" class="hint"></p>
       </div>
 
+      <!-- Right card: status -->
       <div class="card">
         <div class="pill" title="Current occupancy">
-          <span id="status-dot" class="dot red"></span>
-          <strong><span id="count">0</span>/<span id="limit">3</span></strong> using now
+          <span id="status-dot" class="dot state-0" aria-hidden="true"></span>
+          <strong><span id="count">0</span>/<span id="limit">3</span></strong>
+          <span style="margin-left:6px" data-i18n="using_now">using now</span>
         </div>
+
         <ul id="active-list" aria-live="polite" aria-label="Currently using"></ul>
-        <p class="hint muted">Updates in real time for everyone.</p>
+        <p class="hint muted" data-i18n="updates">Updates in real time for everyone.</p>
       </div>
     </div>
   </div>
@@ -64,6 +88,7 @@
     <span>© 2025 Yufannnn</span>
   </footer>
 
+  <!-- Toast (can be hidden via JS setting) -->
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <!-- ES modules: Firebase CDN + your modules -->
@@ -75,10 +100,12 @@
     import { initFirebase } from "./js/firebase.js";
     import { startApp } from "./js/app.js";
 
+    // Firebase boot
     const app = initializeApp(firebaseConfig);
     const db  = getFirestore(app);
-
     initFirebase(db);
+
+    // Start UI/app
     startApp();
   </script>
 </body>

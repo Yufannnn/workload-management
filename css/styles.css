@@ -12,6 +12,8 @@
    9) Active Names (chips) + rolling border
    10) Site Footer
    11) Animations & Motion Pref
+   12) Language Switcher (top-right)
+   13) Custom “Cool Select” (for #who only)
    ======================================================== */
 
 /* ============== 1) THEME & RESET ======================= */
@@ -234,7 +236,7 @@ ul{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; ga
   content:"";
   position:absolute; inset:-2px; border-radius:inherit; padding:2px; pointer-events:none;
   background:
-    linear-gradient(#0c1226, #0c1226) padding-box,  /* inner fill */
+    linear-gradient(#0c1226, #0c1226) padding-box,
     conic-gradient(
       from 0deg,
       rgba(139,92,246,0) 0deg,
@@ -242,7 +244,7 @@ ul{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; ga
       rgba(59,130,246,.65) 180deg,
       rgba(139,92,246,.65) 270deg,
       rgba(139,92,246,0) 360deg
-    ) border-box;                                   /* spinning ring */
+    ) border-box;
   opacity:0; transform-origin:50% 50%;
   animation: spin 1.2s linear infinite; animation-play-state: paused;
   transition: opacity .18s ease; will-change: transform;
@@ -295,10 +297,45 @@ ul{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; ga
   .app{ transform:none !important }
 }
 
-/* ============== CUSTOM “COOL SELECT” ==================
-   We keep the native <select> for value/AT. JS wraps it in a
-   .cool-select with a button+panel. The native select gets
-   class="visually-hidden". ================================= */
+/* ============== 12) LANGUAGE SWITCHER (TOP-RIGHT) ===== */
+.lang-switch{
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 10001;               /* above splash (9999) */
+  pointer-events: auto;
+}
+.lang-switch .sr-only{
+  position:absolute !important; width:1px !important; height:1px !important;
+  padding:0 !important; margin:-1px !important; overflow:hidden !important;
+  clip:rect(0,0,0,0) !important; border:0 !important;
+}
+#lang{
+  -webkit-appearance: auto;
+  appearance: auto;
+  min-width: 140px;
+  height: 40px;
+  padding: 0 12px;
+  font-size: 14px; line-height: 40px;
+  color: var(--ink);
+  background: linear-gradient(180deg, rgba(18,24,48,.55), rgba(8,12,28,.65));
+  border: 1px solid rgba(160,185,255,.35);
+  border-radius: 999px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 6px 16px rgba(2,6,23,.25);
+  cursor: pointer;
+  transition: filter .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+#lang:hover{ filter:brightness(1.07); border-color: rgba(175,200,255,.55); }
+#lang:focus-visible{
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(139,92,246,.28), inset 0 1px 0 rgba(255,255,255,.08);
+  border-color: rgba(139,92,246,.55);
+}
+#lang option{ background:#0b1226; color:var(--ink); }
+
+/* ============== 13) CUSTOM “COOL SELECT” (for #who) ====
+   Native <select id="who"> is visually hidden; JS creates
+   .cool-select (button + list) next to it.                */
 .visually-hidden{
   position:absolute !important; left:-9999px !important; width:1px !important; height:1px !important;
   overflow:hidden !important; clip:rect(0 0 0 0) !important; white-space:nowrap !important; border:0 !important; padding:0 !important; margin:0 !important;

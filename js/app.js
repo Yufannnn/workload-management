@@ -1,6 +1,7 @@
 // js/app.js
 import { MEMBERS, MAX_CONCURRENT } from "./config.js";
 import { ensureStatusDoc, listenStatus, txStart, txStop } from "./firebase.js";
+import { initI18n, t } from "./i18n.js";
 
 const $ = (q) => document.querySelector(q);
 
@@ -8,6 +9,7 @@ const splash   = $("#splash");
 const enterBtn = $("#enterBtn");
 const appEl    = $("#app");
 
+const langSel  = $("#lang");     // <— top-right language select
 const whoSel   = $("#who");
 const startBtn = $("#start");
 const stopBtn  = $("#stop");
@@ -21,9 +23,9 @@ const toastEl  = $("#toast");
 
 let activeCache = [];
 let isBusy = false;
-let wasFull = false; // track "full" state to prevent spammy repeats
+let wasFull = false;
 
-// ===== Toggle toast popups =====
+// Toggle toast popups
 const TOAST_ENABLED = false;
 
 /* ---------- UI helpers ---------- */
@@ -41,10 +43,8 @@ function populateNames(){
 
 /* Enhance #who with a custom, accessible dropdown that mirrors the native select */
 function enhanceSelect(nativeSel, items){
-  // 1) Hide native select visually (keep accessible)
   nativeSel.classList.add('visually-hidden');
 
-  // 2) Build custom control
   const wrapper = document.createElement('div');
   wrapper.className = 'cool-select';
   wrapper.setAttribute('role','combobox');
@@ -54,7 +54,7 @@ function enhanceSelect(nativeSel, items){
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'cool-select__button';
-  btn.setAttribute('aria-label', 'Choose your name');
+  btn.setAttribute('aria-label', t('your_name'));
 
   const label = document.createElement('span');
   label.className = 'cool-select__label';
@@ -71,7 +71,6 @@ function enhanceSelect(nativeSel, items){
   list.setAttribute('role','listbox');
   list.tabIndex = -1;
 
-  // build options
   items.forEach((n) => {
     const li = document.createElement('li');
     li.className = 'cool-option';
@@ -87,18 +86,15 @@ function enhanceSelect(nativeSel, items){
   wrapper.appendChild(list);
   nativeSel.parentNode.insertBefore(wrapper, nativeSel.nextSibling);
 
-  // helpers
   function open(){ wrapper.setAttribute('aria-expanded','true'); list.focus(); }
   function close(){ wrapper.setAttribute('aria-expanded','false'); btn.focus(); }
   function selectValue(v){
     nativeSel.value = v;
     label.textContent = v;
     list.querySelectorAll('.cool-option').forEach(li => li.dataset.selected = String(li.dataset.value === v));
-    // fire native change so the rest of your app updates
     nativeSel.dispatchEvent(new Event('change', {bubbles:true}));
   }
 
-  // events
   btn.addEventListener('click', () => {
     const expanded = wrapper.getAttribute('aria-expanded') === 'true';
     expanded ? close() : open();
@@ -111,19 +107,23 @@ function enhanceSelect(nativeSel, items){
     close();
   });
 
-  // keyboard navigation
   list.addEventListener('keydown', (e) => {
     const opts = [...list.querySelectorAll('.cool-option')];
-    let idx = opts.findIndex(li => li.dataset.value === nativeSel.value);
+    let idx = Math.max(0, opts.findIndex(li => li.dataset.value === nativeSel.value));
     if (e.key === 'ArrowDown'){ e.preventDefault(); idx = Math.min(opts.length-1, idx+1); selectValue(opts[idx].dataset.value); opts[idx].focus(); }
     else if (e.key === 'ArrowUp'){ e.preventDefault(); idx = Math.max(0, idx-1); selectValue(opts[idx].dataset.value); opts[idx].focus(); }
     else if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); close(); }
     else if (e.key === 'Escape'){ e.preventDefault(); close(); }
   });
 
-  // click outside to close
+  // close on outside click
   document.addEventListener('click', (e) => {
     if (!wrapper.contains(e.target)) wrapper.setAttribute('aria-expanded','false');
+  });
+
+  // re-translate aria label if language changes
+  window.addEventListener('wm:localechange', () => {
+    btn.setAttribute('aria-label', t('your_name'));
   });
 }
 
@@ -131,7 +131,6 @@ function setUsageVisuals(count){
   const ratio = count / MAX_CONCURRENT;
   document.documentElement.style.setProperty('--usage', String(ratio));
 
-  // 0 -> green, 1 -> yellow, 2 -> orange, 3+ -> red
   const state =
     count >= MAX_CONCURRENT ? 3 :
     count === 2              ? 2 :
@@ -141,12 +140,11 @@ function setUsageVisuals(count){
   dot.classList.add(`state-${state}`);
 }
 
-
 function renderActiveList(active){
   const me = whoSel.value;
   list.innerHTML = active.length
     ? active.map(n => `<li class="name ${n===me ? 'on' : ''}">${n}</li>`).join("")
-    : '<li class="muted">Nobody is using the server.</li>';
+    : `<li class="muted">${t('nobody')}</li>`;
 }
 
 function updateButtons(active){
@@ -160,9 +158,8 @@ function updateButtons(active){
 let toastTimer;
 let msgTimer;
 
-/** showToast: NO-OP when TOAST_ENABLED = false */
 function showToast(text, kind='ok', holdMs=1000){
-  if (!TOAST_ENABLED) return;      // <- disable bottom toast entirely
+  if (!TOAST_ENABLED) return;
   if (!toastEl) return;
   toastEl.textContent = text;
   toastEl.classList.remove('ok','err');
@@ -171,11 +168,6 @@ function showToast(text, kind='ok', holdMs=1000){
   toastTimer = setTimeout(() => { toastEl.classList.remove('show'); }, Math.max(holdMs, 1));
 }
 
-/**
- * setMsg: sets inline message and fades it out after holdMs.
- * - If text != "", shows for holdMs then fades out (~260ms) and clears.
- * - If text == "", lets any current message linger for holdMs, then fades/clears.
- */
 function setMsg(text, isErr=false, holdMs=1000){
   clearTimeout(msgTimer);
 
@@ -183,11 +175,10 @@ function setMsg(text, isErr=false, holdMs=1000){
     msg.classList.remove('is-hiding');
     msg.textContent = text;
     msg.className = 'hint ' + (isErr ? 'err' : 'ok');
-    showToast(text, isErr ? 'err' : 'ok', holdMs);  // safe: no-op if disabled
+    showToast(text, isErr ? 'err' : 'ok', holdMs);
     msgTimer = setTimeout(() => {
       msg.classList.add('is-hiding');
       setTimeout(() => { msg.textContent = ''; msg.classList.remove('is-hiding'); }, 260);
-      // don't touch toast; it's disabled anyway
     }, holdMs);
   } else if (msg.textContent){
     msgTimer = setTimeout(() => {
@@ -216,7 +207,7 @@ function confettiBurst(x=window.innerWidth/2, y=appEl.getBoundingClientRect().to
     const angle = Math.random()*Math.PI*2;
     const speed = 6 + Math.random()*7;
     const vx = Math.cos(angle)*speed;
-    const vy = Math.sin(angle)*speed - 6; // upward bias
+    const vy = Math.sin(angle)*speed - 6;
     const rot = (Math.random()*720-360);
     p.animate([
       { transform:`translate(0,0) rotate(0deg)`, opacity:1 },
@@ -244,36 +235,6 @@ function confettiBurst(x=window.innerWidth/2, y=appEl.getBoundingClientRect().to
   el.addEventListener('mousemove', onMove);
   el.addEventListener('mouseleave', reset);
 })(appEl);
-
-/* ---------- Actions ---------- */
-async function startUsing(){
-  const me = whoSel.value;
-  if (isBusy) return;
-  isBusy = true;
-  startBtn.disabled = true;
-  try {
-    if (activeCache.includes(me)) { setMsg('You are already marked as USING.', false, 1200); return; }
-    if (activeCache.length >= MAX_CONCURRENT) {
-      setMsg(`Cannot start: server is full (${activeCache.length}/${MAX_CONCURRENT}).`, true, 1200);
-      alert(`Server is full (${activeCache.length}/${MAX_CONCURRENT}). Please try again later.`);
-      return;
-    }
-    setMsg(activeCache.length === MAX_CONCURRENT - 1 ? 'Heads-up: last slot — checking…' : 'Reserving a slot…', false, 1000);
-    await txStart(me, MAX_CONCURRENT);
-    setMsg('You are now marked as USING. ✅', false, 1200);
-    confettiBurst();
-  } catch (e) {
-    if (e.message === 'FULL') {
-      setMsg(`Someone else grabbed the last slot. Server is full (${activeCache.length}/${MAX_CONCURRENT}).`, true, 1400);
-      alert('Server just became full. Please try again later.');
-    } else {
-      console.error(e);
-      setMsg('Something went wrong. Please try again.', true, 1400);
-    }
-  } finally {
-    isBusy = false;
-  }
-}
 
 /* ---------- Stop effect: ripple + soft dust ---------- */
 function ringRipple(x, y, color='rgba(139,92,246,.45)'){
@@ -307,10 +268,8 @@ function ringRipple(x, y, color='rgba(139,92,246,.45)'){
 function stopPoof(x = window.innerWidth/2, y = document.getElementById('app').getBoundingClientRect().top + 60){
   if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-  // 1) ripple
   ringRipple(x, y, 'rgba(96,165,250,.45)');
 
-  // 2) soft dust (fewer, drifting down)
   const n = 14, base = 800;
   for (let i = 0; i < n; i++){
     const p = document.createElement('div');
@@ -320,16 +279,15 @@ function stopPoof(x = window.innerWidth/2, y = document.getElementById('app').ge
     p.style.width = '5px';
     p.style.height = '5px';
     p.style.borderRadius = '50%';
-    // cooler, calmer palette
     p.style.background = `hsl(${200 + Math.random()*40}, 80%, ${60 + Math.random()*10}%)`;
     p.style.pointerEvents = 'none';
     p.style.zIndex = 9999;
     document.body.appendChild(p);
 
-    const angle = (Math.random() * Math.PI) + Math.PI; // mostly downward semicircle
+    const angle = (Math.random() * Math.PI) + Math.PI;
     const speed = 2 + Math.random()*3;
     const vx = Math.cos(angle) * speed;
-    const vy = Math.sin(angle) * speed + 1.5; // downward bias
+    const vy = Math.sin(angle) * speed + 1.5;
     const scaleEnd = 0.4 + Math.random()*0.4;
 
     p.animate(
@@ -342,21 +300,68 @@ function stopPoof(x = window.innerWidth/2, y = document.getElementById('app').ge
   }
 }
 
+/* ---------- Actions ---------- */
+async function startUsing(){
+  const me = whoSel.value;
+  if (isBusy) return;
+  isBusy = true;
+  startBtn.disabled = true;
+  try {
+    if (activeCache.includes(me)) { setMsg(t('already_using'), false, 1200); return; }
+    if (activeCache.length >= MAX_CONCURRENT) {
+      setMsg(t('cannot_start_full', { count: activeCache.length, max: MAX_CONCURRENT }), true, 1200);
+      alert(t('full_now', { count: activeCache.length, max: MAX_CONCURRENT }));
+      return;
+    }
+    setMsg(activeCache.length === MAX_CONCURRENT - 1 ? t('last_slot') : t('reserving'), false, 1000);
+    await txStart(me, MAX_CONCURRENT);
+    setMsg(t('now_using'), false, 1200);
+    confettiBurst();
+  } catch (e) {
+    if (e.message === 'FULL') {
+      setMsg(t('full_now', { count: activeCache.length, max: MAX_CONCURRENT }), true, 1400);
+      alert(t('full_now', { count: activeCache.length, max: MAX_CONCURRENT }));
+    } else {
+      console.error(e);
+      setMsg(t('error_generic'), true, 1400);
+    }
+  } finally {
+    isBusy = false;
+  }
+}
 
 async function stopUsing(){
   const me = whoSel.value;
   try {
     await txStop(me);
-    setMsg('You are now marked as NOT USING. ✋', false, 1200);
-    stopPoof();              // <-- add this line
+    setMsg(t('now_not_using'), false, 1200);
+    stopPoof();
   } catch (e) {
     console.error(e);
-    setMsg('Something went wrong. Please try again.', true, 1400);
+    setMsg(t('error_generic'), true, 1400);
   }
 }
 
 /* ---------- Boot ---------- */
 export function startApp(){
+  // i18n first (top-right select lives outside console)
+  if (langSel) {
+    initI18n(langSel);
+    // re-translate dynamic text inside app when locale changes
+    window.addEventListener("storage", (e) => {
+      if (e.key === "wm.locale") window.dispatchEvent(new Event("wm:localechange"));
+    });
+    const rerender = () => {
+      // update any strings we inject manually
+      renderActiveList(activeCache);
+      startBtn.textContent = t('start');
+      stopBtn.textContent  = t('stop');
+      // notify listeners (e.g., cool select aria label)
+      window.dispatchEvent(new Event("wm:localechange"));
+    };
+    window.addEventListener("wm:localechange", rerender);
+  }
+
   // splash interactions
   splash.addEventListener('click', showConsole);
   enterBtn.addEventListener('click', (e)=>{ e.stopPropagation(); showConsole(); });
@@ -387,13 +392,11 @@ export function startApp(){
       const iAmUsing = active.includes(me);
       const isFull = active.length >= MAX_CONCURRENT;
 
-      // Only announce "full" when it flips to full, and "slot opened" when leaving full
       if (isFull && !iAmUsing && !wasFull) {
-        setMsg(`Server is full (${active.length}/${MAX_CONCURRENT}).`, true, 3000);
+        setMsg(t('full_now', { count: active.length, max: MAX_CONCURRENT }), true, 3000);
       } else if (!isFull && wasFull) {
-        setMsg('A slot just opened. 🎉', false, 2000);
+        setMsg(t('slot_opened'), false, 2000);
       } else {
-        // gentle clear: keep whatever message is there for a bit (your 3s)
         setMsg('', false, 3000);
       }
 
@@ -408,7 +411,7 @@ export function startApp(){
     startBtn.disabled = iAmUsing || activeCache.length >= MAX_CONCURRENT;
     stopBtn.disabled = !iAmUsing;
     renderActiveList(activeCache);
-    setMsg('', false, 1000); // don't nuke instantly
+    setMsg('', false, 1000);
   });
 
   startBtn.addEventListener('click', startUsing);
