@@ -41,7 +41,7 @@ export const DICTS = {
     nobody: "Nobody is using the server.",
   },
   zh: {
-    title: "工作负载管理",
+    title: "服务器负载管理",
     splash_help: "点击任意位置打开控制台。",
     open_console: "打开控制台",
     intro: "同时最多允许 <span class=\"accent\"><strong id=\"max\">3</strong></span> 人使用服务器。选择你的名字，然后点击 <em>开始</em> / <em>停止</em>。",
@@ -50,7 +50,7 @@ export const DICTS = {
     stop: "停止",
     using_now: "正在使用",
     updates: "所有人的状态都会实时更新。",
-    banner_start: "准备准备，研究时间到！",
+    banner_start: "准备准备 ，研究时间到！",
     banner_stop: "准备准备，休息时间到！",
     already_using: "你已经处于“使用中”。",
     cannot_start_full: "无法开始：服务器已满（{count}/{max}）。",
@@ -60,7 +60,7 @@ export const DICTS = {
     now_using: "你现在已标记为“使用中”。✅",
     now_not_using: "你现在已标记为“未使用”。✋",
     error_generic: "出错了，请重试。",
-    slot_opened: "空位出现啦。🎉",
+    slot_opened: "新空位出现啦。🎉",
     nobody: "目前没有人在使用服务器。",
   },
   es: {
