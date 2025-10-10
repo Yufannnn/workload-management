@@ -9,7 +9,7 @@ const splash   = $("#splash");
 const enterBtn = $("#enterBtn");
 const appEl    = $("#app");
 
-const langSel  = $("#lang");     // <— top-right language select
+const langSel  = $("#lang");     // top-right language select
 const whoSel   = $("#who");
 const startBtn = $("#start");
 const stopBtn  = $("#stop");
@@ -20,6 +20,7 @@ const dot      = $("#status-dot");
 const list     = $("#active-list");
 const msg      = $("#msg");
 const toastEl  = $("#toast");
+const bannerEl = $("#banner");   // <-- define globally
 
 let activeCache = [];
 let isBusy = false;
@@ -39,6 +40,19 @@ function showConsole(){
 function populateNames(){
   whoSel.innerHTML = MEMBERS.map(n => `<option value="${n}">${n}</option>`).join("");
   limitEls.forEach(el => el.textContent = MAX_CONCURRENT);
+}
+
+/* Start/Stop banner (localized) */
+function showBanner(text, kind = 'start', holdMs = 1400){
+  if (!bannerEl) return;
+  bannerEl.textContent = text;
+  bannerEl.classList.remove('start','stop','show');
+  // retrigger transition
+  void bannerEl.offsetWidth;
+  bannerEl.classList.add(kind, 'show');
+  setTimeout(() => {
+    bannerEl.classList.remove('show');
+  }, holdMs);
 }
 
 /* Enhance #who with a custom, accessible dropdown that mirrors the native select */
@@ -313,9 +327,15 @@ async function startUsing(){
       alert(t('full_now', { count: activeCache.length, max: MAX_CONCURRENT }));
       return;
     }
-    setMsg(activeCache.length === MAX_CONCURRENT - 1 ? t('last_slot') : t('reserving'), false, 1000);
-    await txStart(me, MAX_CONCURRENT);
+
+    setMsg(
+      activeCache.length === MAX_CONCURRENT - 1 ? t('last_slot') : t('reserving'),
+      false, 1000
+    );
+
+    await txStart(me, MAX_CONCURRENT);  // <-- wait for success
     setMsg(t('now_using'), false, 1200);
+    showBanner(t('banner_start'), 'start');  // <-- then banner
     confettiBurst();
   } catch (e) {
     if (e.message === 'FULL') {
@@ -335,6 +355,7 @@ async function stopUsing(){
   try {
     await txStop(me);
     setMsg(t('now_not_using'), false, 1200);
+    showBanner(t('banner_stop'), 'stop');   // <-- correct key & kind
     stopPoof();
   } catch (e) {
     console.error(e);
@@ -344,19 +365,17 @@ async function stopUsing(){
 
 /* ---------- Boot ---------- */
 export function startApp(){
-  // i18n first (top-right select lives outside console)
+  // i18n first
   if (langSel) {
     initI18n(langSel);
-    // re-translate dynamic text inside app when locale changes
+    // react to locale changes from this tab or other tabs
     window.addEventListener("storage", (e) => {
       if (e.key === "wm.locale") window.dispatchEvent(new Event("wm:localechange"));
     });
     const rerender = () => {
-      // update any strings we inject manually
       renderActiveList(activeCache);
       startBtn.textContent = t('start');
       stopBtn.textContent  = t('stop');
-      // notify listeners (e.g., cool select aria label)
       window.dispatchEvent(new Event("wm:localechange"));
     };
     window.addEventListener("wm:localechange", rerender);

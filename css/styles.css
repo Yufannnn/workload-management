@@ -206,7 +206,7 @@ button:disabled{ opacity:.55; cursor:not-allowed }
 .card .pill strong{ display:inline-flex; align-items:center; gap:6px; white-space:nowrap }
 
 /* Right card helper */
-.card .hint.muted{ margin-top:auto; text-align:right }
+.card .hint.muted{ margin-top:15px; text-align:right }
 
 /* ============== 8) STATUS DOT (four states) =========== */
 .dot{ width:8px; height:8px; border-radius:50%; position:relative }
@@ -407,4 +407,38 @@ ul{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; ga
 /* Reduced motion for cool select */
 @media (prefers-reduced-motion: reduce){
   .cool-select__chev::before{ animation: none }
+}
+
+/* === Start/Stop banner ===================================== */
+.banner {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-16px);
+  opacity: 0;
+  pointer-events: none;
+
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  color: var(--ink);
+  background: #0f1428;
+  border: 1px solid rgba(120,150,255,.25);
+  box-shadow: 0 16px 36px rgba(2,6,23,.45), inset 0 1px 0 rgba(255,255,255,.04);
+
+  transition: opacity .25s ease, transform .25s ease;
+  z-index: 10000;
+}
+.banner.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* color accents */
+.banner.start { border-color: rgba(139,92,246,.45); }
+.banner.stop  { border-color: rgba(96,165,250,.45); }
+
+/* Reduced motion respect */
+@media (prefers-reduced-motion: reduce){
+  .banner { transition: none; }
 }
