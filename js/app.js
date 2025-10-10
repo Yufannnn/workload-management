@@ -20,7 +20,9 @@ const dot      = $("#status-dot");
 const list     = $("#active-list");
 const msg      = $("#msg");
 const toastEl  = $("#toast");
-const bannerEl = $("#banner");   // <-- define globally
+const bannerEl = $("#banner");   // banner element (top-right)
+
+/* ------------------------------------------------------ */
 
 let activeCache = [];
 let isBusy = false;
@@ -50,8 +52,11 @@ function showBanner(text, kind = 'start', holdMs = 1400){
   // retrigger transition
   void bannerEl.offsetWidth;
   bannerEl.classList.add(kind, 'show');
+  // temporarily "ghost" controls underneath (CSS keys off body.banner-on)
+  document.body.classList.add('banner-on');
   setTimeout(() => {
     bannerEl.classList.remove('show');
+    document.body.classList.remove('banner-on');
   }, holdMs);
 }
 
@@ -333,9 +338,9 @@ async function startUsing(){
       false, 1000
     );
 
-    await txStart(me, MAX_CONCURRENT);  // <-- wait for success
+    await txStart(me, MAX_CONCURRENT);  // wait for success
     setMsg(t('now_using'), false, 1200);
-    showBanner(t('banner_start'), 'start');  // <-- then banner
+    showBanner(t('banner_start'), 'start');  // localized banner
     confettiBurst();
   } catch (e) {
     if (e.message === 'FULL') {
@@ -355,7 +360,7 @@ async function stopUsing(){
   try {
     await txStop(me);
     setMsg(t('now_not_using'), false, 1200);
-    showBanner(t('banner_stop'), 'stop');   // <-- correct key & kind
+    showBanner(t('banner_stop'), 'stop');   // localized banner
     stopPoof();
   } catch (e) {
     console.error(e);

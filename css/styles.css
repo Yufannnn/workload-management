@@ -206,7 +206,7 @@ button:disabled{ opacity:.55; cursor:not-allowed }
 .card .pill strong{ display:inline-flex; align-items:center; gap:6px; white-space:nowrap }
 
 /* Right card helper */
-.card .hint.muted{ margin-top:15px; text-align:right }
+.card .hint.muted{ margin-top:12px; text-align:right }
 
 /* ============== 8) STATUS DOT (four states) =========== */
 .dot{ width:8px; height:8px; border-radius:50%; position:relative }
@@ -222,37 +222,68 @@ button:disabled{ opacity:.55; cursor:not-allowed }
 /* ============== 9) ACTIVE NAMES (CHIPS) ================ */
 ul{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:8px }
 
+/* === Chips: animated border only === */
 .name{
   position:relative;
-  padding:8px 12px; border-radius:10px;
-  background:#0c1226; border:1px solid #182650; color:var(--ink);
-  transition:all .15s ease;
+  padding:8px 12px;
+  border-radius:10px;
+  background:#0c1226;
+  border:1px solid #182650;
+  color:var(--ink);
+  transition: outline-color .18s ease;
   overflow:hidden; isolation:isolate;
 }
+
+/* self indicator stays the same */
 .name.on{ outline:1px solid rgba(139,92,246,.35); background:#0e1530 }
 
-/* Rolling border (mask-free) — only visible on hover/focus */
+/* Border ring (only the stroke), spins on hover/focus */
 .name::after{
   content:"";
-  position:absolute; inset:-2px; border-radius:inherit; padding:2px; pointer-events:none;
-  background:
-    linear-gradient(#0c1226, #0c1226) padding-box,
-    conic-gradient(
-      from 0deg,
-      rgba(139,92,246,0) 0deg,
-      rgba(139,92,246,.65) 90deg,
-      rgba(59,130,246,.65) 180deg,
-      rgba(139,92,246,.65) 270deg,
-      rgba(139,92,246,0) 360deg
-    ) border-box;
-  opacity:0; transform-origin:50% 50%;
-  animation: spin 1.2s linear infinite; animation-play-state: paused;
-  transition: opacity .18s ease; will-change: transform;
-}
-.name:hover::after, .name:focus-visible::after{ opacity:1; animation-play-state: running; }
+  position:absolute; inset:-1px;               /* sit exactly over the border */
+  border-radius:inherit;
+  padding:1.5px;                               /* border thickness of the glow */
+  background: conic-gradient(
+    from 0deg,
+    rgba(139,92,246,.95),
+    rgba(96,165,250,.95),
+    rgba(139,92,246,.95)
+  );
 
-/* Keyboard focus outline */
-.name:focus-visible{ outline:2px solid rgba(139,92,246,.55); outline-offset:2px }
+  /* carve out the middle so only the ring shows */
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+          mask-composite: exclude;
+
+  opacity:0;
+  transition: opacity .18s ease;
+  animation: spin 1.2s linear infinite;
+  animation-play-state: paused;                /* paused until hover/focus */
+  pointer-events:none;
+}
+
+/* show + spin only while interacting */
+.name:hover::after,
+.name:focus-visible::after{
+  opacity:1;
+  animation-play-state: running;
+}
+
+/* keyboard focus outline (unchanged) */
+.name:focus-visible{
+  outline:2px solid rgba(139,92,246,.55);
+  outline-offset:2px;
+}
+
+/* respect reduced motion: no spin, still show border on focus */
+@media (prefers-reduced-motion: reduce){
+  .name::after{ animation: none; }
+}
 
 /* ============== 10) SITE FOOTER ======================= */
 .site-foot{
@@ -442,3 +473,4 @@ ul{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; ga
 @media (prefers-reduced-motion: reduce){
   .banner { transition: none; }
 }
+
