@@ -39,6 +39,9 @@ export const DICTS = {
     error_generic: "Something went wrong. Please try again.",
     slot_opened: "A slot just opened. 🎉",
     nobody: "Nobody is using the server.",
+    // footer
+    footer_built: "Built with GitHub Pages + Firebase.",
+    footer_copyright: "© {year} {owner}",
   },
   zh: {
     title: "好学的美猪-负载管理",
@@ -62,6 +65,9 @@ export const DICTS = {
     error_generic: "出错了，请重试。",
     slot_opened: "新空位出现啦。🎉",
     nobody: "目前没有人在使用服务器。",
+    // footer
+    footer_built: "用 GitHub Pages 与 Firebase 搭建。",
+    footer_copyright: "© {year} {owner}",
   },
   es: {
     title: "Gestión de carga",
@@ -85,6 +91,9 @@ export const DICTS = {
     error_generic: "Algo salió mal. Inténtalo de nuevo.",
     slot_opened: "Se liberó un cupo. 🎉",
     nobody: "Nadie está usando el servidor.",
+    // footer
+    footer_built: "Creado con GitHub Pages y Firebase.",
+    footer_copyright: "© {year} {owner}",
   },
   ru: {
     title: "Управление загрузкой",
@@ -108,6 +117,9 @@ export const DICTS = {
     error_generic: "Что-то пошло не так. Попробуйте ещё раз.",
     slot_opened: "Освободился слот. 🎉",
     nobody: "Никто не использует сервер.",
+    // footer
+    footer_built: "Сделано на GitHub Pages и Firebase.",
+    footer_copyright: "© {year} {owner}",
   },
   fr: {
     title: "Gestion de charge",
@@ -131,6 +143,9 @@ export const DICTS = {
     error_generic: "Un problème est survenu. Réessayez.",
     slot_opened: "Un créneau vient de se libérer. 🎉",
     nobody: "Personne n’utilise le serveur.",
+    // footer
+    footer_built: "Réalisé avec GitHub Pages et Firebase.",
+    footer_copyright: "© {year} {owner}",
   },
   de: {
     title: "Auslastungsverwaltung",
@@ -154,6 +169,9 @@ export const DICTS = {
     error_generic: "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
     slot_opened: "Ein Platz ist frei geworden. 🎉",
     nobody: "Niemand nutzt den Server.",
+    // footer
+    footer_built: "Erstellt mit GitHub Pages und Firebase.",
+    footer_copyright: "© {year} {owner}",
   },
   ko: {
     title: "작업 부하 관리",
@@ -177,6 +195,9 @@ export const DICTS = {
     error_generic: "문제가 발생했어요. 다시 시도해 주세요.",
     slot_opened: "자리가 났어요. 🎉",
     nobody: "현재 서버를 사용하는 사람이 없어요.",
+    // footer
+    footer_built: "GitHub Pages와 Firebase로 제작.",
+    footer_copyright: "© {year} {owner}",
   },
   ja: {
     title: "ワークロード管理",
@@ -200,6 +221,9 @@ export const DICTS = {
     error_generic: "問題が発生しました。もう一度お試しください。",
     slot_opened: "空きが出ました。🎉",
     nobody: "現在、使用している人はいません。",
+    // footer
+    footer_built: "GitHub Pages と Firebase で構築。",
+    footer_copyright: "© {year} {owner}",
   },
 };
 
@@ -243,10 +267,12 @@ export function detectLocale() {
 export function applyTranslations() {
   const maxEl = document.getElementById("max");
   const max = maxEl ? maxEl.textContent : "3";
+  const year = String(new Date().getFullYear());
 
   document.querySelectorAll("[data-i18n]").forEach((el) => {
     const key = el.dataset.i18n;
-    const raw = t(key, { max });
+    const owner = el.dataset.owner || "Yufannnn";
+    const raw = t(key, { max, year, owner });
 
     // If the string has markup (like the intro), use innerHTML; else textContent
     if (/[<>&]/.test(raw)) el.innerHTML = raw;

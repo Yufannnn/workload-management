@@ -205,8 +205,13 @@ button:disabled{ opacity:.55; cursor:not-allowed }
 .card .pill{ width:100%; display:flex; align-items:center; gap:8px }
 .card .pill strong{ display:inline-flex; align-items:center; gap:6px; white-space:nowrap }
 
-/* Right card helper */
-.card .hint.muted{ margin-top:12px; text-align:right }
+/* Put the hint at the bottom-right of any card, with no extra gap */
+.card .hint.muted{
+  margin-top: auto;     /* pushes it to the bottom in the flex column */
+  margin-bottom: 0;     /* kill any extra bottom margin */
+  text-align: right;
+}
+
 
 /* ============== 8) STATUS DOT (four states) =========== */
 .dot{ width:8px; height:8px; border-radius:50%; position:relative }
@@ -234,15 +239,25 @@ ul{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; ga
   overflow:hidden; isolation:isolate;
 }
 
-/* self indicator stays the same */
-.name.on{ outline:1px solid rgba(139,92,246,.35); background:#0e1530 }
+/* Base chip: allow the ::after ring to position correctly */
+.name{
+  position: relative;
+  border-radius: 12px;              /* match whatever radius you use now */
+  isolation: isolate;               /* keeps the ring above chip content only */
+}
+
+/* Self indicator stays the same */
+.name.on { cursor: pointer; outline:1px solid rgba(139,92,246,.35); background:#0e1530; }
+/* Optional: keep or remove this hover if you prefer only the spinning ring */
+.name.on:hover { outline:1px solid rgba(139,92,246,.35); background:#0e1530; }
 
 /* Border ring (only the stroke), spins on hover/focus */
 .name::after{
   content:"";
-  position:absolute; inset:-1px;               /* sit exactly over the border */
-  border-radius:inherit;
-  padding:1.5px;                               /* border thickness of the glow */
+  position:absolute;
+  inset:-1px;                       /* sit exactly over the border */
+  border-radius: inherit;
+  padding:1.5px;                    /* ring thickness */
   background: conic-gradient(
     from 0deg,
     rgba(139,92,246,.95),
@@ -263,7 +278,7 @@ ul{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; ga
   opacity:0;
   transition: opacity .18s ease;
   animation: spin 1.2s linear infinite;
-  animation-play-state: paused;                /* paused until hover/focus */
+  animation-play-state: paused;     /* paused until hover/focus */
   pointer-events:none;
 }
 
@@ -284,6 +299,9 @@ ul{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; ga
 @media (prefers-reduced-motion: reduce){
   .name::after{ animation: none; }
 }
+
+/* simple spin keyframes (if you don't already have them) */
+@keyframes spin { to { transform: rotate(1turn); } }
 
 /* ============== 10) SITE FOOTER ======================= */
 .site-foot{
@@ -351,7 +369,7 @@ ul{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; ga
   color: var(--ink);
   background: linear-gradient(180deg, rgba(18,24,48,.55), rgba(8,12,28,.65));
   border: 1px solid rgba(160,185,255,.35);
-  border-radius: 999px;
+  border-radius: var(--radius);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 6px 16px rgba(2,6,23,.25);
   cursor: pointer;
   transition: filter .18s ease, box-shadow .18s ease, border-color .18s ease;
@@ -372,9 +390,21 @@ ul{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; ga
   overflow:hidden !important; clip:rect(0 0 0 0) !important; white-space:nowrap !important; border:0 !important; padding:0 !important; margin:0 !important;
 }
 
-.cool-select{ position:relative; font-size:15px }
+/* wrapper */
+.cool-select{
+  position:relative;
+  font-size:15px;
+  /* Create a stacking context so we can raise it cleanly when open */
+  transform: translateZ(0);
+}
+.cool-select[aria-expanded="true"]{
+  z-index: 9999; /* <-- keeps list above neighboring cards & banner */
+}
+
+/* trigger button */
 .cool-select__button{
-  width:100%; display:flex; align-items:center; justify-content:space-between; gap:10px;
+  width:100%;
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
   height:46px; padding:0 14px;
   border-radius:12px; border:1px solid rgba(130,160,255,.28);
   background: linear-gradient(180deg, rgba(28,36,70,.28), rgba(5,10,26,.42));
@@ -393,10 +423,14 @@ ul{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; ga
     inset 0 1px 0 rgba(255,255,255,.08);
   border-color: rgba(139,92,246,.55);
 }
-.cool-select__label{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.cool-select__label{
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
 
-/* Jewel that spins only when open / pressed */
-.cool-select__chev{ width:18px; height:18px; position:relative; flex:0 0 auto; border-radius:50% }
+/* jewel spinner (only visible/spinning when open/pressed) */
+.cool-select__chev{
+  width:18px; height:18px; position:relative; flex:0 0 auto; border-radius:50%;
+}
 .cool-select__chev::before{
   content:""; position:absolute; inset:0; border-radius:50%;
   background: conic-gradient(from 0deg,
@@ -415,27 +449,44 @@ ul{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; ga
   opacity:.75; animation-play-state: running;
 }
 
-/* Dropdown panel + options */
+/* dropdown list */
 .cool-select__list{
-  position:absolute; z-index:50; left:0; right:0; top: calc(100% + 6px);
-  background:#0f1428; border:1px solid rgba(120,150,255,.25);
-  border-radius:12px; box-shadow:0 20px 40px rgba(2,6,23,.45), inset 0 1px 0 rgba(255,255,255,.03);
-  padding:6px; max-height:220px; overflow:auto;
-  opacity:0; transform: translateY(6px) scale(.98); pointer-events:none;
+  position:absolute; left:0; right:0; top: calc(100% + 6px);
+  background:#0f1428;
+  border:1px solid rgba(120,150,255,.25);
+  border-radius:12px;
+  box-shadow:0 20px 40px rgba(2,6,23,.45), inset 0 1px 0 rgba(255,255,255,.03);
+  padding:6px;
+  max-height:220px; overflow:auto;
+  /* overlay safety */
+  z-index:10000;            /* sits above everything nearby */
+  transform: translateY(6px) scale(.98) translateZ(0);
+  opacity:0; pointer-events:none;
   transition: opacity .18s ease, transform .18s ease;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
-.cool-select[aria-expanded="true"] .cool-select__list{ opacity:1; transform:none; pointer-events:auto }
+.cool-select[aria-expanded="true"] .cool-select__list{
+  opacity:1; transform: none; pointer-events:auto;
+}
 
+/* options */
 .cool-option{
-  list-style:none; padding:10px; border-radius:10px; color:var(--ink);
-  cursor:pointer; display:flex; align-items:center; justify-content:space-between;
+  list-style:none;
+  padding:10px;
+  border-radius:10px;
+  color:var(--ink);
+  cursor:pointer;
+  display:flex; align-items:center; justify-content:space-between;
   transition: background .12s ease, outline-color .12s ease;
 }
-.cool-option[data-selected="true"]{ background:#0e1530; outline:1px solid rgba(139,92,246,.35) }
+.cool-option[data-selected="true"]{
+  background:#0e1530; outline:1px solid rgba(139,92,246,.35);
+}
 .cool-option:hover{ background:#0c1226 }
 .cool-option:focus{ outline:2px solid rgba(139,92,246,.55); outline-offset:2px }
 
-/* Reduced motion for cool select */
+/* reduced motion */
 @media (prefers-reduced-motion: reduce){
   .cool-select__chev::before{ animation: none }
 }
@@ -472,5 +523,25 @@ ul{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; ga
 /* Reduced motion respect */
 @media (prefers-reduced-motion: reduce){
   .banner { transition: none; }
+}
+
+/* === FX: Aurora backdrop === */
+.fx-aurora{
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  filter: blur(60px) saturate(120%);
+  opacity:.7;
+  background:
+    radial-gradient(42vw 36vh at 18% 16%, rgba(139,92,246,.28), transparent 60%),
+    radial-gradient(42vw 36vh at 82% 84%, rgba(59,130,246,.20), transparent 60%),
+    radial-gradient(50vw 44vh at 50% 60%, rgba(96,165,250,.16), transparent 60%);
+  animation: auroraMove 28s ease-in-out infinite alternate;
+}
+@keyframes auroraMove{
+  0%{ transform:translateY(-1.5%) rotate(.001deg) }
+  50%{ transform:translateY(1.5%) }
+  100%{ transform:translateY(-1.5%) rotate(.001deg) }
+}
+@media (prefers-reduced-motion: reduce){
+  .fx-aurora{ animation:none }
 }
 
