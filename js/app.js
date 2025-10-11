@@ -84,6 +84,20 @@ function showBanner(text, kind = "start", holdMs = 1400) {
 function enhanceSelect(nativeSel, items) {
   if (!nativeSel) return;
 
+  // --- create portal root once (top of DOM tree, above everything) ---
+  let PORTAL = document.getElementById("wm-portal");
+  if (!PORTAL) {
+    PORTAL = document.createElement("div");
+    PORTAL.id = "wm-portal";
+    Object.assign(PORTAL.style, {
+      position: "fixed",
+      inset: "0",
+      zIndex: "2147483647",        // max safe z-index
+      pointerEvents: "none"        // children turn it back on
+    });
+    document.body.appendChild(PORTAL);
+  }
+
   nativeSel.classList.add("visually-hidden");
 
   const wrapper = document.createElement("div");
@@ -121,64 +135,55 @@ function enhanceSelect(nativeSel, items) {
     list.appendChild(li);
   });
 
-  // Start with just the button in-flow
+  // Only dock the button; list will be moved into the portal when open
   wrapper.append(btn);
   nativeSel.parentNode.insertBefore(wrapper, nativeSel.nextSibling);
 
-  // ---- floating/portal helpers ----
-  let placed = false;
+  // --- positioning helpers (iOS-safe, accounts for URL bar hide/show) ---
   const placeList = () => {
     const r = btn.getBoundingClientRect();
-    list.style.position = "fixed";
-    list.style.left = `${Math.round(r.left)}px`;
-    list.style.top  = `${Math.round(r.bottom + 6)}px`;
-    list.style.width = `${Math.round(r.width)}px`;
-    const spaceBelow = window.innerHeight - (r.bottom + 6);
-    list.style.maxHeight = `${Math.max(160, Math.min(260, spaceBelow - 12))}px`;
-    list.style.zIndex = "10000";
-  };
-  const attachFloat = () => {
-    if (placed) return;
-    document.body.appendChild(list);
-    placeList();
-    window.addEventListener("resize", placeList);
-    window.addEventListener("scroll", placeList, true); // capture nested scrolls
-    placed = true;
-  };
-  const detachFloat = () => {
-    if (!placed) return;
-    list.classList.remove("is-open");
-    list.style.cssText = ""; // clear inline positions/visibility
-    wrapper.appendChild(list);
-    window.removeEventListener("resize", placeList);
-    window.removeEventListener("scroll", placeList, true);
-    placed = false;
-  };
+    const vv = window.visualViewport;
+    const offX = vv ? vv.offsetLeft : 0;
+    const offY = vv ? vv.offsetTop  : 0;
+    const vh   = vv ? vv.height     : window.innerHeight;
 
-  const showList = () => {
-    // since we portal, the descendant CSS no longer applies — force visible:
-    list.classList.add("is-open");
-    list.style.opacity = "1";
-    list.style.transform = "none";
-    list.style.pointerEvents = "auto";
-  };
-  const hideList = () => {
-    list.classList.remove("is-open");
-    list.style.opacity = "";
-    list.style.transform = "";
-    list.style.pointerEvents = "";
+    Object.assign(list.style, {
+      position: "fixed",
+      left: `${Math.round(offX + r.left)}px`,
+      top:  `${Math.round(offY + r.bottom + 6)}px`,
+      width:`${Math.round(r.width)}px`,
+      maxHeight: `${Math.max(160, Math.min(320, vh - (r.bottom + 6) - 12))}px`,
+      zIndex: "2147483647",
+      // force its own layer above any blurred/3D parents
+      transform: "translateZ(0)",
+      WebkitTransform: "translateZ(0)",
+      pointerEvents: "auto",
+      opacity: "1"
+    });
   };
 
   const open  = () => {
+    if (wrapper.getAttribute("aria-expanded") === "true") return;
     wrapper.setAttribute("aria-expanded", "true");
-    attachFloat();
-    showList();
+    PORTAL.appendChild(list);
+    placeList();
+    window.addEventListener("resize", placeList);
+    window.addEventListener("scroll", placeList, true);
+    window.visualViewport?.addEventListener("resize", placeList);
+    window.visualViewport?.addEventListener("scroll", placeList);
     list.focus();
   };
+
   const close = (returnFocus = true) => {
+    if (wrapper.getAttribute("aria-expanded") !== "true") return;
     wrapper.setAttribute("aria-expanded", "false");
-    hideList();
-    detachFloat();
+    // reset inline styles & return to wrapper
+    list.removeAttribute("style");
+    wrapper.appendChild(list);
+    window.removeEventListener("resize", placeList);
+    window.removeEventListener("scroll", placeList, true);
+    window.visualViewport?.removeEventListener("resize", placeList);
+    window.visualViewport?.removeEventListener("scroll", placeList);
     if (returnFocus) btn.focus();
   };
 
@@ -212,20 +217,20 @@ function enhanceSelect(nativeSel, items) {
     else if (e.key === "Escape") { e.preventDefault(); close(); }
   });
 
-  // Close on outside click — only when open; do not refocus button
+  // Close on outside click/touch (ignore clicks inside the portal)
   const onOutside = (e) => {
     if (wrapper.getAttribute("aria-expanded") !== "true") return;
-    if (wrapper.contains(e.target) || list.contains(e.target)) return;
+    if (wrapper.contains(e.target) || document.getElementById("wm-portal")?.contains(e.target)) return;
     close(false);
   };
   document.addEventListener("pointerdown", onOutside, true);
   document.addEventListener("click", onOutside, true);
 
-  // keep aria-label localized
   window.addEventListener("wm:localechange", () => {
     btn.setAttribute("aria-label", t("your_name"));
   });
 }
+
 
 /* ---------- Visuals for usage meter & dot ---------- */
 function setUsageVisuals(count) {
