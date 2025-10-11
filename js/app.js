@@ -103,7 +103,6 @@ function enhanceSelect(nativeSel, items) {
 
   const chev = document.createElement("span");
   chev.className = "cool-select__chev";
-
   btn.append(label, chev);
 
   const list = document.createElement("ul");
@@ -122,11 +121,66 @@ function enhanceSelect(nativeSel, items) {
     list.appendChild(li);
   });
 
-  wrapper.append(btn, list);
+  // Start with just the button in-flow
+  wrapper.append(btn);
   nativeSel.parentNode.insertBefore(wrapper, nativeSel.nextSibling);
 
-  const open  = () => { wrapper.setAttribute("aria-expanded", "true");  list.focus(); };
-  const close = () => { wrapper.setAttribute("aria-expanded", "false"); btn.focus(); };
+  // ---- floating/portal helpers ----
+  let placed = false;
+  const placeList = () => {
+    const r = btn.getBoundingClientRect();
+    list.style.position = "fixed";
+    list.style.left = `${Math.round(r.left)}px`;
+    list.style.top  = `${Math.round(r.bottom + 6)}px`;
+    list.style.width = `${Math.round(r.width)}px`;
+    const spaceBelow = window.innerHeight - (r.bottom + 6);
+    list.style.maxHeight = `${Math.max(160, Math.min(260, spaceBelow - 12))}px`;
+    list.style.zIndex = "10000";
+  };
+  const attachFloat = () => {
+    if (placed) return;
+    document.body.appendChild(list);
+    placeList();
+    window.addEventListener("resize", placeList);
+    window.addEventListener("scroll", placeList, true); // capture nested scrolls
+    placed = true;
+  };
+  const detachFloat = () => {
+    if (!placed) return;
+    list.classList.remove("is-open");
+    list.style.cssText = ""; // clear inline positions/visibility
+    wrapper.appendChild(list);
+    window.removeEventListener("resize", placeList);
+    window.removeEventListener("scroll", placeList, true);
+    placed = false;
+  };
+
+  const showList = () => {
+    // since we portal, the descendant CSS no longer applies — force visible:
+    list.classList.add("is-open");
+    list.style.opacity = "1";
+    list.style.transform = "none";
+    list.style.pointerEvents = "auto";
+  };
+  const hideList = () => {
+    list.classList.remove("is-open");
+    list.style.opacity = "";
+    list.style.transform = "";
+    list.style.pointerEvents = "";
+  };
+
+  const open  = () => {
+    wrapper.setAttribute("aria-expanded", "true");
+    attachFloat();
+    showList();
+    list.focus();
+  };
+  const close = (returnFocus = true) => {
+    wrapper.setAttribute("aria-expanded", "false");
+    hideList();
+    detachFloat();
+    if (returnFocus) btn.focus();
+  };
 
   function selectValue(v) {
     nativeSel.value = v;
@@ -143,8 +197,7 @@ function enhanceSelect(nativeSel, items) {
   });
 
   list.addEventListener("click", (e) => {
-    const tgt = e.target instanceof Element ? e.target : e.target?.parentElement;
-    const li  = tgt?.closest?.(".cool-option");
+    const li = e.target.closest(".cool-option");
     if (!li) return;
     selectValue(li.dataset.value);
     close();
@@ -159,10 +212,16 @@ function enhanceSelect(nativeSel, items) {
     else if (e.key === "Escape") { e.preventDefault(); close(); }
   });
 
-  document.addEventListener("click", (e) => {
-    if (!wrapper.contains(e.target)) wrapper.setAttribute("aria-expanded", "false");
-  });
+  // Close on outside click — only when open; do not refocus button
+  const onOutside = (e) => {
+    if (wrapper.getAttribute("aria-expanded") !== "true") return;
+    if (wrapper.contains(e.target) || list.contains(e.target)) return;
+    close(false);
+  };
+  document.addEventListener("pointerdown", onOutside, true);
+  document.addEventListener("click", onOutside, true);
 
+  // keep aria-label localized
   window.addEventListener("wm:localechange", () => {
     btn.setAttribute("aria-label", t("your_name"));
   });
@@ -181,9 +240,7 @@ function setUsageVisuals(count) {
 function renderActiveList(active) {
   const me = whoSel.value;
   listEl.innerHTML = active.length
-    ? active
-        .map(n => `<li class="name ${n === me ? "on" : ""}" data-name="${n}" tabindex="0">${n}</li>`)
-        .join("")
+    ? active.map(n => `<li class="name ${n === me ? "on" : ""}" data-name="${n}" tabindex="0">${n}</li>`).join("")
     : `<li class="muted">${t("nobody")}</li>`;
 }
 
@@ -384,7 +441,6 @@ export function startApp() {
       const iAmUsing = active.includes(me);
       const isFull = active.length >= MAX_CONCURRENT;
 
-      // status message hints
       if (isFull && !iAmUsing && !wasFull) {
         setMsg(t("full_now", { count: active.length, max: MAX_CONCURRENT }), true, 3000);
       } else if (!isFull && wasFull) {

@@ -545,3 +545,14 @@ ul{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; ga
   .fx-aurora{ animation:none }
 }
 
+/* Floated dropdown list (ported to <body>) */
+.cool-select__list--floating{
+  position: fixed;              /* escape card/app stacking contexts */
+  left: 0; top: 0;              /* set by JS */
+  width: auto;                  /* set by JS */
+  max-height: 220px;            /* JS may tighten this */
+  z-index: 100000;              /* above everything */
+  transform: none;              /* no entry transform when floating */
+  opacity: 1;
+  pointer-events: auto;
+}
