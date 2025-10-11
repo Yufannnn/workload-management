@@ -66,7 +66,7 @@ export const DICTS = {
     slot_opened: "新空位出现啦。🎉",
     nobody: "目前没有人在使用服务器。",
     // footer
-    footer_built: "用 GitHub Pages 与 Firebase 搭建。",
+    footer_built: "由 GitHub Pages 与 Firebase 搭建。",
     footer_copyright: "© {year} {owner}",
   },
   es: {

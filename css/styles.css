@@ -1,32 +1,36 @@
-/* ========================================================
-   Workload Management — Styles
-   Sections:
-   1) Theme & Reset
-   2) Page Layout & Background
-   3) Splash (entry overlay)
-   4) App Shell (console)
-   5) Layout (grid, cards, text)
-   6) Controls (buttons, selects, messages, toast)
-   7) Usage Pill
-   8) Status Dot
-   9) Active Names (chips) + rolling border
-   10) Site Footer
-   11) Animations & Motion Pref
-   12) Language Switcher (top-right)
-   13) Custom “Cool Select” (for #who only)
-   ======================================================== */
+/* =========================================================
+   Workload Management — Styles (organized)
+   Sections
+   01) Design Tokens & Reset
+   02) Base Layout & Background
+   03) Utilities (sr-only / visually-hidden)
+   04) Splash (entry overlay)
+   05) App Shell & Typography
+   06) Grid / Card / Labels
+   07) Controls (buttons, selects, messages, toast)
+   08) Language Switcher
+   09) Custom “Cool Select” (#who) + Portal
+   10) Usage Pill
+   11) Status Dot
+   12) Active Names (chips)
+   13) Site Footer
+   14) Banner (start/stop)
+   15) FX: Aurora
+   16) Animations & Motion Preferences
+   ========================================================= */
 
-/* ============== 1) THEME & RESET ======================= */
+
+/* ============== 01) DESIGN TOKENS & RESET ============== */
 :root{
   --ink:#e9edff;
   --muted:#a7b0c6;
   --accent:#8b5cf6;
-  --ok:#60a5fa;     /* green/ok */
-  --warn:#fde68a;   /* yellow */
-  --orange:#fdba74; /* orange */
-  --danger:#fda4af; /* red */
+  --ok:#60a5fa;      /* green/ok */
+  --warn:#fde68a;    /* yellow   */
+  --orange:#fdba74;  /* orange   */
+  --danger:#fda4af;  /* red      */
 
-  --usage:0;              /* 0..1 set by JS */
+  --usage:0;                 /* 0..1 (set by JS) */
   --radius:16px;
   --shadow:0 12px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.02);
 }
@@ -34,7 +38,8 @@
 *{ box-sizing:border-box }
 html,body{ height:100% }
 
-/* ============== 2) PAGE LAYOUT & BACKGROUND ============ */
+
+/* ============== 02) BASE LAYOUT & BACKGROUND =========== */
 body{
   margin:0;
   font:16px/1.35 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
@@ -48,9 +53,22 @@ body{
     url("../assets/background.jpg") center / cover no-repeat fixed;
 }
 
-/* ============== 3) SPLASH (ENTRY OVERLAY) ============== */
+
+/* ============== 03) UTILITIES ========================== */
+.visually-hidden{
+  position:absolute !important; left:-9999px !important; width:1px !important; height:1px !important;
+  overflow:hidden !important; clip:rect(0 0 0 0) !important; white-space:nowrap !important; border:0 !important; padding:0 !important; margin:0 !important;
+}
+.lang-switch .sr-only{
+  position:absolute !important; width:1px !important; height:1px !important;
+  padding:0 !important; margin:-1px !important; overflow:hidden !important;
+  clip:rect(0,0,0,0) !important; border:0 !important;
+}
+
+
+/* ============== 04) SPLASH (ENTRY OVERLAY) ============= */
 .splash{
-  position:fixed; inset:0; z-index:9999;        /* stay above everything */
+  position:fixed; inset:0; z-index:9999;
   display:flex; align-items:center; justify-content:center;
   text-align:center; color:#eef2ff;
   background:
@@ -58,7 +76,7 @@ body{
     radial-gradient(50vw 35vh at 50% 80%, rgba(59,130,246,.22), transparent 60%),
     linear-gradient(to bottom, rgba(6,8,18,.55), rgba(6,8,18,.60));
   transition: opacity .4s ease, visibility 0s linear .4s;
-  pointer-events:auto;                           /* clickable while visible */
+  pointer-events:auto;
 }
 .splash.hide{ opacity:0; visibility:hidden; pointer-events:none; }
 .splash .box{
@@ -73,17 +91,16 @@ body{
 .splash p{ margin:6px 0 14px; color:#cbd5e1 }
 .splash .enter{
   display:inline-block; padding:10px 16px; border-radius:999px;
-  background:#11183a; border:1px solid #334155; color:#e5e7eb;
-  cursor:pointer; font-size:15px;
+  background:#11183a; border:1px solid #334155; color:#e5e7eb; cursor:pointer; font-size:15px;
 }
 .splash .enter:hover{ filter:brightness(1.07) }
 .splash .hint{ font-size:12px; color:#9aa3b2; margin-top:8px }
 
-/* ============== 4) APP SHELL (CONSOLE) ================= */
+
+/* ============== 05) APP SHELL & TYPOGRAPHY ============ */
 .app{
   position:relative; z-index:1;
   width:100%; max-width:780px;
-
   background: rgba(12,16,32,.78);
   backdrop-filter: blur(8px) saturate(120%);
   -webkit-backdrop-filter: blur(8px) saturate(120%);
@@ -95,10 +112,9 @@ body{
     0 28px 70px rgba(2,6,23,.45),
     0 10px 28px rgba(2,6,23,.30),
     inset 0 1px 0 rgba(255,255,255,.06);
-
   opacity:0; transform:translateY(8px) scale(.985);
   transition: opacity .35s ease, transform .35s ease;
-  pointer-events:none;                            /* inert until .show */
+  pointer-events:none;
   transform-style: preserve-3d; will-change: transform;
 }
 .app::before{
@@ -112,9 +128,7 @@ body{
   content:"";
   position:absolute; inset:0; border-radius:var(--radius);
   pointer-events:none;
-  box-shadow:
-    0 0 0 1px rgba(175,195,255,.25),
-    0 0 24px rgba(120,150,255,.14);
+  box-shadow: 0 0 0 1px rgba(175,195,255,.25), 0 0 24px rgba(120,150,255,.14);
 }
 .app.show{ opacity:1; transform:none; pointer-events:auto; }
 
@@ -122,10 +136,10 @@ h1{ margin:0 0 8px; font-size:22px; letter-spacing:.2px; color:var(--ink); text-
 p{ margin:6px 0; color:var(--muted) }
 .accent{ color:var(--accent) }
 
-/* Ensure app never eats splash clicks before shown */
-.app,.app::before,.app::after{ z-index:1 }
+.app,.app::before,.app::after{ z-index:1 }  /* ensure app never eats splash clicks before shown */
 
-/* ============== 5) LAYOUT (GRID, CARDS, TEXT) ========= */
+
+/* ============== 06) GRID / CARD / LABELS ============== */
 .grid{ display:grid; grid-template-columns:1fr; gap:12px; margin-top:16px }
 @media (min-width:720px){
   .grid{ grid-template-columns: 1fr 1fr; align-items: stretch; }
@@ -139,16 +153,19 @@ p{ margin:6px 0; color:var(--muted) }
   box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
   display:flex; flex-direction:column;
 }
-
 label{ display:block; margin-bottom:6px; color:var(--muted); font-size:14px }
 
-/* ============== 6) CONTROLS (Buttons, Selects, Messages, Toast) ==== */
+/* keep hint at the bottom-right of card */
+.card .hint.muted{
+  margin-top:auto; margin-bottom:0; text-align:right;
+}
+
+
+/* ============== 07) CONTROLS (UI) ===================== */
 select,button{
   width:100%; padding:12px; border-radius:12px;
   border:1px solid #1b2a55; background:#0b1226; color:var(--ink); font-size:15px;
 }
-
-/* Buttons */
 button{ cursor:pointer; transition: transform .05s ease, filter .18s ease, box-shadow .18s ease }
 button:hover{ filter:brightness(1.12) }
 button:active{ transform:translateY(1px) scale(.995) }
@@ -170,13 +187,8 @@ button:disabled{ opacity:.55; cursor:not-allowed }
 .row{ display:flex; gap:10px }
 .grow{ flex:1 }
 
-/* Inline message fade */
 #msg { transition: opacity .25s ease; }
 #msg.is-hiding { opacity: 0; }
-
-/* Full-viewport portal for floating popovers (iOS-safe) */
-#wm-portal{ position:fixed; inset:0; z-index:2147483647; pointer-events:none }
-#wm-portal > *{ pointer-events:auto } /* children can receive taps */
 
 /* Toast */
 .toast{
@@ -189,179 +201,14 @@ button:disabled{ opacity:.55; cursor:not-allowed }
 .toast.err{ border-color:#3a1d22; background:#1a0e15; color:#ffd6d6 }
 .toast.ok{ border-color:#1a2a55; background:#0f1b34 }
 
-/* ============== 7) USAGE PILL ========================== */
-.pill{
-  position:relative; display:inline-flex; align-items:center; gap:8px;
-  padding:8px 12px; border-radius:999px; background:#0b1226;
-  border:1px solid #1b2a55; font-size:14px; overflow:hidden; color:var(--ink);
-}
-.pill::before{
-  content:""; position:absolute; inset:0; width:calc(var(--usage) * 100%);
-  background:linear-gradient(90deg, rgba(139,92,246,.18), rgba(96,165,250,.16)); pointer-events:none;
-  transition: width .35s ease;
-}
-.pill::after{
-  content:""; position:absolute; inset:0; pointer-events:none;
-  background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,.08) 20%, transparent 40%);
-  transform: translateX(-120%);
-  animation: shimmer 2.6s infinite;
-}
-.card .pill{ width:100%; display:flex; align-items:center; gap:8px }
-.card .pill strong{ display:inline-flex; align-items:center; gap:6px; white-space:nowrap }
 
-/* Put the hint at the bottom-right of any card, with no extra gap */
-.card .hint.muted{
-  margin-top: auto;     /* pushes it to the bottom in the flex column */
-  margin-bottom: 0;     /* kill any extra bottom margin */
-  text-align: right;
-}
-
-
-/* ============== 8) STATUS DOT (four states) =========== */
-.dot{ width:8px; height:8px; border-radius:50%; position:relative }
-.dot.state-0{ background: var(--ok);     color: var(--ok) }       /* 0 using  -> green */
-.dot.state-1{ background: var(--warn);   color: var(--warn) }     /* 1 using  -> yellow */
-.dot.state-2{ background: var(--orange); color: var(--orange) }   /* 2 using  -> orange */
-.dot.state-3{ background: var(--danger); color: var(--danger) }   /* full     -> red */
-.dot::after{
-  content:""; position:absolute; inset:-6px; border-radius:50%;
-  box-shadow:0 0 0 0 currentColor; opacity:.6; animation: pulse 1.8s infinite;
-}
-
-/* ============== 9) ACTIVE NAMES (CHIPS) ================ */
-ul{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:8px }
-
-/* === Chips: animated border only === */
-.name{
-  position:relative;
-  padding:8px 12px;
-  border-radius:10px;
-  background:#0c1226;
-  border:1px solid #182650;
-  color:var(--ink);
-  transition: outline-color .18s ease;
-  overflow:hidden; isolation:isolate;
-}
-
-/* Base chip: allow the ::after ring to position correctly */
-.name{
-  position: relative;
-  border-radius: 12px;              /* match whatever radius you use now */
-  isolation: isolate;               /* keeps the ring above chip content only */
-}
-
-/* Self indicator stays the same */
-.name.on { cursor: pointer; outline:1px solid rgba(139,92,246,.35); background:#0e1530; }
-/* Optional: keep or remove this hover if you prefer only the spinning ring */
-.name.on:hover { outline:1px solid rgba(139,92,246,.35); background:#0e1530; }
-
-/* Border ring (only the stroke), spins on hover/focus */
-.name::after{
-  content:"";
-  position:absolute;
-  inset:-1px;                       /* sit exactly over the border */
-  border-radius: inherit;
-  padding:1.5px;                    /* ring thickness */
-  background: conic-gradient(
-    from 0deg,
-    rgba(139,92,246,.95),
-    rgba(96,165,250,.95),
-    rgba(139,92,246,.95)
-  );
-
-  /* carve out the middle so only the ring shows */
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-          mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-          mask-composite: exclude;
-
-  opacity:0;
-  transition: opacity .18s ease;
-  animation: spin 1.2s linear infinite;
-  animation-play-state: paused;     /* paused until hover/focus */
-  pointer-events:none;
-}
-
-/* show + spin only while interacting */
-.name:hover::after,
-.name:focus-visible::after{
-  opacity:1;
-  animation-play-state: running;
-}
-
-/* keyboard focus outline (unchanged) */
-.name:focus-visible{
-  outline:2px solid rgba(139,92,246,.55);
-  outline-offset:2px;
-}
-
-/* respect reduced motion: no spin, still show border on focus */
-@media (prefers-reduced-motion: reduce){
-  .name::after{ animation: none; }
-}
-
-/* simple spin keyframes (if you don't already have them) */
-@keyframes spin { to { transform: rotate(1turn); } }
-
-/* ============== 10) SITE FOOTER ======================= */
-.site-foot{
-  position:fixed; left:0; right:0; bottom:10px;
-  display:flex; gap:12px; justify-content:center; align-items:center;
-  padding:8px 16px;
-  font-size:13px; color:var(--muted);
-  pointer-events:none;
-}
-.site-foot > *{ pointer-events:auto }
-.site-foot::before{
-  content:"";
-  position:absolute; inset:0 8px; height:100%;
-  border-radius:999px;
-  background: rgba(10,14,30,.35);
-  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-  border:1px solid rgba(160,180,255,.22);
-  z-index:-1;
-}
-
-/* ============== 11) ANIMATIONS & MOTION PREF ========= */
-@keyframes shimmer { to { transform: translateX(120%); } }
-@keyframes pulse {
-  0% { box-shadow:0 0 0 0 currentColor; opacity:.55; }
-  60%{ box-shadow:0 0 0 10px rgba(0,0,0,0); opacity:0; }
-  100%{ box-shadow:0 0 0 0 rgba(0,0,0,0); opacity:0; }
-}
-@keyframes itemIn { to { opacity:1; transform:none; } }
-@keyframes bump { 0%{transform:scale(1)} 40%{transform:scale(1.18)} 100%{transform:scale(1)} }
-@keyframes spin { to { transform:rotate(360deg); } }
-
-.reveal-child > * { opacity:0; transform:translateY(6px) }
-.reveal-child.show > * { animation: itemIn .45s ease forwards }
-.reveal-child.show > *:nth-child(2){ animation-delay: .06s }
-.reveal-child.show > *:nth-child(3){ animation-delay: .12s }
-
-.bump { animation: bump .35s ease }
-
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce){
-  *{ animation:none !important; transition:none !important }
-  .app{ transform:none !important }
-}
-
-/* ============== 12) LANGUAGE SWITCHER (TOP-RIGHT) ===== */
+/* ============== 08) LANGUAGE SWITCHER ================= */
 .lang-switch{
   position: fixed;
   top: 16px;
   right: 16px;
-  z-index: 10001;               /* above splash (9999) */
+  z-index: 10001;   /* above splash (9999) */
   pointer-events: auto;
-}
-.lang-switch .sr-only{
-  position:absolute !important; width:1px !important; height:1px !important;
-  padding:0 !important; margin:-1px !important; overflow:hidden !important;
-  clip:rect(0,0,0,0) !important; border:0 !important;
 }
 #lang{
   -webkit-appearance: auto;
@@ -386,26 +233,17 @@ ul{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; ga
 }
 #lang option{ background:#0b1226; color:var(--ink); }
 
-/* ============== 13) CUSTOM “COOL SELECT” (for #who) ====
-   Native <select id="who"> is visually hidden; JS creates
-   .cool-select (button + list) next to it.                */
-.visually-hidden{
-  position:absolute !important; left:-9999px !important; width:1px !important; height:1px !important;
-  overflow:hidden !important; clip:rect(0 0 0 0) !important; white-space:nowrap !important; border:0 !important; padding:0 !important; margin:0 !important;
-}
 
-/* wrapper */
+/* ============== 09) CUSTOM “COOL SELECT” + PORTAL ===== */
+/* Wrapper */
 .cool-select{
   position:relative;
   font-size:15px;
-  /* Create a stacking context so we can raise it cleanly when open */
-  transform: translateZ(0);
+  transform: translateZ(0); /* create stacking context */
 }
-.cool-select[aria-expanded="true"]{
-  z-index: 9999; /* <-- keeps list above neighboring cards & banner */
-}
+.cool-select[aria-expanded="true"]{ z-index: 9999; }
 
-/* trigger button */
+/* Trigger button */
 .cool-select__button{
   width:100%;
   display:flex; align-items:center; justify-content:space-between; gap:10px;
@@ -427,14 +265,10 @@ ul{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; ga
     inset 0 1px 0 rgba(255,255,255,.08);
   border-color: rgba(139,92,246,.55);
 }
-.cool-select__label{
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-}
+.cool-select__label{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
 
-/* jewel spinner (only visible/spinning when open/pressed) */
-.cool-select__chev{
-  width:18px; height:18px; position:relative; flex:0 0 auto; border-radius:50%;
-}
+/* Jewel spinner */
+.cool-select__chev{ width:18px; height:18px; position:relative; flex:0 0 auto; border-radius:50% }
 .cool-select__chev::before{
   content:""; position:absolute; inset:0; border-radius:50%;
   background: conic-gradient(from 0deg,
@@ -446,14 +280,10 @@ ul{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; ga
   opacity:0; animation: spin 1.6s linear infinite; animation-play-state: paused;
   transition: opacity .15s ease;
 }
-.cool-select[aria-expanded="true"] .cool-select__chev::before{
-  opacity:.85; animation-play-state: running;
-}
-.cool-select__button:active .cool-select__chev::before{
-  opacity:.75; animation-play-state: running;
-}
+.cool-select[aria-expanded="true"] .cool-select__chev::before{ opacity:.85; animation-play-state: running; }
+.cool-select__button:active .cool-select__chev::before{ opacity:.75; animation-play-state: running; }
 
-/* dropdown list */
+/* Dropdown list (when kept in-flow — JS ports it to portal when open) */
 .cool-select__list{
   position:absolute; left:0; right:0; top: calc(100% + 6px);
   background:#0f1428;
@@ -462,101 +292,194 @@ ul{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; ga
   box-shadow:0 20px 40px rgba(2,6,23,.45), inset 0 1px 0 rgba(255,255,255,.03);
   padding:6px;
   max-height:220px; overflow:auto;
-  /* overlay safety */
-  z-index:10000;            /* sits above everything nearby */
+  z-index:10000;
   transform: translateY(6px) scale(.98) translateZ(0);
   opacity:0; pointer-events:none;
   transition: opacity .18s ease, transform .18s ease;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
 }
-.cool-select[aria-expanded="true"] .cool-select__list{
-  opacity:1; transform: none; pointer-events:auto;
-}
+.cool-select[aria-expanded="true"] .cool-select__list{ opacity:1; transform:none; pointer-events:auto }
 
-/* options */
+/* Options */
 .cool-option{
-  list-style:none;
-  padding:10px;
-  border-radius:10px;
-  color:var(--ink);
-  cursor:pointer;
-  display:flex; align-items:center; justify-content:space-between;
+  list-style:none; padding:10px; border-radius:10px; color:var(--ink);
+  cursor:pointer; display:flex; align-items:center; justify-content:space-between;
   transition: background .12s ease, outline-color .12s ease;
 }
-.cool-option[data-selected="true"]{
-  background:#0e1530; outline:1px solid rgba(139,92,246,.35);
-}
+.cool-option[data-selected="true"]{ background:#0e1530; outline:1px solid rgba(139,92,246,.35) }
 .cool-option:hover{ background:#0c1226 }
 .cool-option:focus{ outline:2px solid rgba(139,92,246,.55); outline-offset:2px }
 
-/* reduced motion */
-@media (prefers-reduced-motion: reduce){
-  .cool-select__chev::before{ animation: none }
-}
+/* iOS-safe full-viewport portal; list is appended here while open */
+#wm-portal{ position:fixed; inset:0; z-index:2147483647; pointer-events:none }
+#wm-portal > *{ pointer-events:auto }
 
-/* === Start/Stop banner ===================================== */
-.banner {
+/* (Legacy helper if you ever apply the floating class via CSS) */
+.cool-select__list--floating{
   position: fixed;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%) translateY(-16px);
-  opacity: 0;
-  pointer-events: none;
-
-  padding: 10px 14px;
-  border-radius: 12px;
-  font-size: 14px;
-  color: var(--ink);
-  background: #0f1428;
-  border: 1px solid rgba(120,150,255,.25);
-  box-shadow: 0 16px 36px rgba(2,6,23,.45), inset 0 1px 0 rgba(255,255,255,.04);
-
-  transition: opacity .25s ease, transform .25s ease;
-  z-index: 10000;
-}
-.banner.show {
+  left: 0; top: 0;
+  width: auto;
+  max-height: 220px;
+  z-index: 100000;
+  transform: none;
   opacity: 1;
-  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
 }
 
-/* color accents */
-.banner.start { border-color: rgba(139,92,246,.45); }
-.banner.stop  { border-color: rgba(96,165,250,.45); }
-
-/* Reduced motion respect */
+/* Reduced motion */
 @media (prefers-reduced-motion: reduce){
-  .banner { transition: none; }
+  .cool-select__chev::before{ animation:none }
 }
 
-/* === FX: Aurora backdrop === */
+
+/* ============== 10) USAGE PILL ========================= */
+.pill{
+  position:relative; display:inline-flex; align-items:center; gap:8px;
+  padding:8px 12px; border-radius:999px; background:#0b1226;
+  border:1px solid #1b2a55; font-size:14px; overflow:hidden; color:var(--ink);
+}
+.pill::before{
+  content:""; position:absolute; inset:0; width:calc(var(--usage) * 100%);
+  background:linear-gradient(90deg, rgba(139,92,246,.18), rgba(96,165,250,.16)); pointer-events:none;
+  transition: width .35s ease;
+}
+.pill::after{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,.08) 20%, transparent 40%);
+  transform: translateX(-120%);
+  animation: shimmer 2.6s infinite;
+}
+.card .pill{ width:100%; display:flex; align-items:center; gap:8px }
+.card .pill strong{ display:inline-flex; align-items:center; gap:6px; white-space:nowrap }
+
+
+/* ============== 11) STATUS DOT ========================= */
+.dot{ width:8px; height:8px; border-radius:50%; position:relative }
+.dot.state-0{ background: var(--ok);     color: var(--ok) }
+.dot.state-1{ background: var(--warn);   color: var(--warn) }
+.dot.state-2{ background: var(--orange); color: var(--orange) }
+.dot.state-3{ background: var(--danger); color: var(--danger) }
+.dot::after{
+  content:""; position:absolute; inset:-6px; border-radius:50%;
+  box-shadow:0 0 0 0 currentColor; opacity:.6; animation: pulse 1.8s infinite;
+}
+
+
+/* ============== 12) ACTIVE NAMES (CHIPS) ============== */
+ul{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:8px }
+
+.name{
+  position:relative;
+  padding:8px 12px;
+  border-radius:12px;
+  background:#0c1226;
+  border:1px solid #182650;
+  color:var(--ink);
+  transition: outline-color .18s ease;
+  overflow:hidden; isolation:isolate;
+}
+.name.on { cursor: pointer; outline:1px solid rgba(139,92,246,.35); background:#0e1530; }
+.name.on:hover { outline:1px solid rgba(139,92,246,.35); background:#0e1530; }
+
+/* ring effect */
+.name::after{
+  content:""; position:absolute; inset:-1px; border-radius:inherit; padding:1.5px;
+  background: conic-gradient(from 0deg, rgba(139,92,246,.95), rgba(96,165,250,.95), rgba(139,92,246,.95));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask-composite: exclude;
+  opacity:0; transition: opacity .18s ease;
+  animation: spin 1.2s linear infinite; animation-play-state: paused;
+  pointer-events:none;
+}
+.name:hover::after, .name:focus-visible::after{ opacity:1; animation-play-state: running }
+.name:focus-visible{ outline:2px solid rgba(139,92,246,.55); outline-offset:2px }
+
+@media (prefers-reduced-motion: reduce){
+  .name::after{ animation:none }
+}
+
+
+/* ============== 13) SITE FOOTER ======================== */
+.site-foot{
+  position:fixed; left:0; right:0; bottom:10px;
+  display:flex; gap:12px; justify-content:center; align-items:center;
+  padding:8px 16px;
+  font-size:13px; color:var(--muted);
+  pointer-events:none;
+}
+.site-foot > *{ pointer-events:auto }
+.site-foot::before{
+  content:"";
+  position:absolute; inset:0 8px; height:100%;
+  border-radius:999px;
+  background: rgba(10,14,30,.35);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  border:1px solid rgba(160,180,255,.22);
+  z-index:-1;
+}
+
+
+/* ============== 14) BANNER (START/STOP) ================ */
+.banner{
+  position: fixed; top: 16px; left: 50%;
+  transform: translateX(-50%) translateY(-16px);
+  opacity: 0; pointer-events: none;
+  padding: 10px 14px; border-radius: 12px; font-size: 14px; color: var(--ink);
+  background: #0f1428; border: 1px solid rgba(120,150,255,.25);
+  box-shadow: 0 16px 36px rgba(2,6,23,.45), inset 0 1px 0 rgba(255,255,255,.04);
+  transition: opacity .25s ease, transform .25s ease; z-index: 10000;
+}
+.banner.show{ opacity:1; transform: translateX(-50%) translateY(0) }
+.banner.start { border-color: rgba(139,92,246,.45) }
+.banner.stop  { border-color: rgba(96,165,250,.45) }
+
+@media (prefers-reduced-motion: reduce){
+  .banner { transition:none }
+}
+
+
+/* ============== 15) FX: AURORA ========================= */
 .fx-aurora{
   position:fixed; inset:0; z-index:0; pointer-events:none;
-  filter: blur(60px) saturate(120%);
-  opacity:.7;
+  filter: blur(60px) saturate(120%); opacity:.7;
   background:
     radial-gradient(42vw 36vh at 18% 16%, rgba(139,92,246,.28), transparent 60%),
     radial-gradient(42vw 36vh at 82% 84%, rgba(59,130,246,.20), transparent 60%),
     radial-gradient(50vw 44vh at 50% 60%, rgba(96,165,250,.16), transparent 60%);
   animation: auroraMove 28s ease-in-out infinite alternate;
 }
+@media (prefers-reduced-motion: reduce){
+  .fx-aurora{ animation:none }
+}
+
+
+/* ============== 16) ANIMATIONS & MOTION PREF =========== */
+@keyframes shimmer { to { transform: translateX(120%); } }
+@keyframes pulse {
+  0%{ box-shadow:0 0 0 0 currentColor; opacity:.55 }
+  60%{ box-shadow:0 0 0 10px rgba(0,0,0,0); opacity:0 }
+  100%{ box-shadow:0 0 0 0 rgba(0,0,0,0); opacity:0 }
+}
+@keyframes itemIn { to { opacity:1; transform:none } }
+@keyframes bump { 0%{transform:scale(1)} 40%{transform:scale(1.18)} 100%{transform:scale(1)} }
+@keyframes spin { to { transform:rotate(360deg) } }
 @keyframes auroraMove{
   0%{ transform:translateY(-1.5%) rotate(.001deg) }
   50%{ transform:translateY(1.5%) }
   100%{ transform:translateY(-1.5%) rotate(.001deg) }
 }
-@media (prefers-reduced-motion: reduce){
-  .fx-aurora{ animation:none }
-}
 
-/* Floated dropdown list (ported to <body>) */
-.cool-select__list--floating{
-  position: fixed;              /* escape card/app stacking contexts */
-  left: 0; top: 0;              /* set by JS */
-  width: auto;                  /* set by JS */
-  max-height: 220px;            /* JS may tighten this */
-  z-index: 100000;              /* above everything */
-  transform: none;              /* no entry transform when floating */
-  opacity: 1;
-  pointer-events: auto;
+.reveal-child > * { opacity:0; transform:translateY(6px) }
+.reveal-child.show > * { animation: itemIn .45s ease forwards }
+.reveal-child.show > *:nth-child(2){ animation-delay: .06s }
+.reveal-child.show > *:nth-child(3){ animation-delay: .12s }
+
+.bump { animation: bump .35s ease }
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation:none !important; transition:none !important }
+  .app{ transform:none !important }
 }

@@ -5,13 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Workload Management — 3 concurrent max</title>
 
-  <!-- Icons & social -->
+  <!-- Icons -->
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <meta name="theme-color" content="#060914">
 
+  <!-- Social -->
   <meta property="og:title" content="Workload Management" />
   <meta property="og:description" content="Up to 3 people at a time. Start/Stop to claim a slot." />
   <meta property="og:image" content="site-og-1200x630.png" />
@@ -21,24 +22,16 @@
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+  <!-- Soft background glow -->
   <div class="fx-aurora" aria-hidden="true"></div>
 
-  <!-- Top-right language switcher (outside console) -->
+  <!-- Top-right language switcher (built by i18n.js) -->
   <div class="lang-switch" aria-label="Language picker">
     <label class="sr-only" for="lang">Language</label>
-    <select id="lang" aria-label="Language">
-      <option value="en">English</option>
-      <option value="zh">中文</option>
-      <option value="es">Español</option>
-      <option value="ru">Русский</option>
-      <option value="fr">Français</option>
-      <option value="de">Deutsch</option>
-      <option value="ja">日本語</option>
-      <option value="ko">한국어</option>
-    </select>
+    <select id="lang" aria-label="Language"></select>
   </div>
 
-  <!-- Splash -->
+  <!-- Welcome splash -->
   <div id="splash" class="splash" role="dialog" aria-modal="true" aria-labelledby="splash-title" tabindex="0">
     <div class="box">
       <h1 id="splash-title" data-i18n="title">Workload Management</h1>
@@ -49,8 +42,8 @@
 
   <!-- Start/Stop banner -->
   <div id="banner" class="banner" role="status" aria-live="polite"></div>
-  
-  <!-- Console -->
+
+  <!-- Main console -->
   <div class="app" role="application" aria-label="Server usage tracker" id="app">
     <h1 data-i18n="title">Workload Management</h1>
 
@@ -87,14 +80,17 @@
     </div>
   </div>
 
-  <!-- Site footer (outside console) -->
+  <!-- Site footer -->
   <footer class="site-foot" role="contentinfo">
     <span data-i18n="footer_built"></span>
     <span data-i18n="footer_copyright" data-owner="Yufannnn"></span>
   </footer>
 
-  <!-- Toast (can be hidden via JS setting) -->
+  <!-- Toast -->
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- iOS-safe portal mount for floating popovers (who list) -->
+  <div id="wm-portal" aria-hidden="true"></div>
 
   <!-- ES modules: Firebase CDN + your modules -->
   <script type="module">
@@ -110,8 +106,12 @@
     const db  = getFirestore(app);
     initFirebase(db);
 
-    // Start UI/app
+    // Start UI
     startApp();
   </script>
+
+  <noscript>
+    Please enable JavaScript to use this site.
+  </noscript>
 </body>
 </html>

@@ -30,7 +30,7 @@ let activeCache = [];
 let wasFull     = false;
 let isBusy      = false;
 
-// flip to true if you want the little bottom toast popups
+// Toggle toast popups
 const TOAST_ENABLED = false;
 
 /* ============================ THEME HELPERS ============================ */
@@ -57,7 +57,7 @@ function initTheme() {
 
 /* ============================== UI HELPERS ============================= */
 function showConsole() {
-  document.body.classList.remove("splash-on");   // re-enable header controls
+  document.body.classList.remove("splash-on");
   splash.classList.add("hide");
   appEl.classList.add("show");
   document.querySelector(".reveal-child")?.classList.add("show");
@@ -84,7 +84,7 @@ function showBanner(text, kind = "start", holdMs = 1400) {
 function enhanceSelect(nativeSel, items) {
   if (!nativeSel) return;
 
-  // --- create portal root once (top of DOM tree, above everything) ---
+  // Portal root once
   let PORTAL = document.getElementById("wm-portal");
   if (!PORTAL) {
     PORTAL = document.createElement("div");
@@ -92,8 +92,8 @@ function enhanceSelect(nativeSel, items) {
     Object.assign(PORTAL.style, {
       position: "fixed",
       inset: "0",
-      zIndex: "2147483647",        // max safe z-index
-      pointerEvents: "none"        // children turn it back on
+      zIndex: "2147483647",
+      pointerEvents: "none"
     });
     document.body.appendChild(PORTAL);
   }
@@ -135,11 +135,9 @@ function enhanceSelect(nativeSel, items) {
     list.appendChild(li);
   });
 
-  // Only dock the button; list will be moved into the portal when open
   wrapper.append(btn);
   nativeSel.parentNode.insertBefore(wrapper, nativeSel.nextSibling);
 
-  // --- positioning helpers (iOS-safe, accounts for URL bar hide/show) ---
   const placeList = () => {
     const r = btn.getBoundingClientRect();
     const vv = window.visualViewport;
@@ -154,7 +152,6 @@ function enhanceSelect(nativeSel, items) {
       width:`${Math.round(r.width)}px`,
       maxHeight: `${Math.max(160, Math.min(320, vh - (r.bottom + 6) - 12))}px`,
       zIndex: "2147483647",
-      // force its own layer above any blurred/3D parents
       transform: "translateZ(0)",
       WebkitTransform: "translateZ(0)",
       pointerEvents: "auto",
@@ -165,7 +162,7 @@ function enhanceSelect(nativeSel, items) {
   const open  = () => {
     if (wrapper.getAttribute("aria-expanded") === "true") return;
     wrapper.setAttribute("aria-expanded", "true");
-    PORTAL.appendChild(list);
+    document.getElementById("wm-portal").appendChild(list);
     placeList();
     window.addEventListener("resize", placeList);
     window.addEventListener("scroll", placeList, true);
@@ -177,7 +174,6 @@ function enhanceSelect(nativeSel, items) {
   const close = (returnFocus = true) => {
     if (wrapper.getAttribute("aria-expanded") !== "true") return;
     wrapper.setAttribute("aria-expanded", "false");
-    // reset inline styles & return to wrapper
     list.removeAttribute("style");
     wrapper.appendChild(list);
     window.removeEventListener("resize", placeList);
@@ -217,7 +213,6 @@ function enhanceSelect(nativeSel, items) {
     else if (e.key === "Escape") { e.preventDefault(); close(); }
   });
 
-  // Close on outside click/touch (ignore clicks inside the portal)
   const onOutside = (e) => {
     if (wrapper.getAttribute("aria-expanded") !== "true") return;
     if (wrapper.contains(e.target) || document.getElementById("wm-portal")?.contains(e.target)) return;
@@ -230,7 +225,6 @@ function enhanceSelect(nativeSel, items) {
     btn.setAttribute("aria-label", t("your_name"));
   });
 }
-
 
 /* ---------- Visuals for usage meter & dot ---------- */
 function setUsageVisuals(count) {
@@ -275,7 +269,6 @@ function setMsg(text, isError = false, holdMs = 1500) {
   msgEl.textContent = text || "";
   msgEl.classList.toggle("err", !!isError);
   msgEl.classList.toggle("show", !!text);
-
   clearTimeout(msgTimer);
   if (text) msgTimer = setTimeout(() => msgEl.classList.remove("show"), Math.max(holdMs, 1));
 }
@@ -355,7 +348,6 @@ async function startUsing() {
     }
 
     setMsg(activeCache.length === MAX_CONCURRENT - 1 ? t("last_slot") : t("reserving"), false, 1000);
-
     await txStart(me, MAX_CONCURRENT);
     setMsg(t("now_using"), false, 1200);
     showBanner(t("banner_start"), "start");
@@ -386,22 +378,56 @@ async function stopUsing() {
   }
 }
 
+/* ============================ ACTIVE CHIP UX =========================== */
+/** Robust delegation to stop when clicking your own active chip */
+function initActiveChipHandlers() {
+  if (!listEl) return;
+
+  // Click to stop (own chip only)
+  listEl.addEventListener("click", (e) => {
+    // Guard Text nodes
+    const tgt = e.target instanceof Element ? e.target : e.target?.parentElement;
+    const li  = tgt?.closest?.(".name");
+    if (!li) return;
+
+    const me   = whoSel.value;
+    const name = li.dataset.name || li.textContent.trim();
+    if (li.classList.contains("on") && name === me) {
+      stopUsing();
+    }
+  });
+
+  // Keyboard support (Enter/Space on focused chip)
+  listEl.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const tgt = e.target instanceof Element ? e.target : e.target?.parentElement;
+    const li  = tgt?.closest?.(".name.on");
+    if (!li) return;
+
+    const me   = whoSel.value;
+    const name = li.dataset.name || li.textContent.trim();
+    if (name === me) {
+      e.preventDefault();
+      stopUsing();
+    }
+  });
+}
+
 /* ================================== BOOT =============================== */
 export function startApp() {
-  // While splash is visible, mute header controls (CSS keys off this flag)
+  // Splash muting for header controls
   document.body.classList.add("splash-on");
 
-  // Theme first
+  // Theme
   initTheme();
   themeBtn?.addEventListener("click", () => {
     const cur = document.documentElement.getAttribute("data-theme") || "dark";
     applyTheme(cur === "dark" ? "light" : "dark");
   });
 
-  // i18n next
+  // i18n
   if (langSel) {
     initI18n(langSel);
-    // Sync translations across tabs
     window.addEventListener("storage", (e) => {
       if (e.key === "wm.locale") window.dispatchEvent(new Event("wm:localechange"));
     });
@@ -414,7 +440,7 @@ export function startApp() {
     window.addEventListener("wm:localechange", rerender);
   }
 
-  // Splash
+  // Splash interactions
   splash.addEventListener("click", showConsole);
   enterBtn.addEventListener("click", (e) => { e.stopPropagation(); showConsole(); });
   splash.addEventListener("keydown", (e) => {
@@ -433,7 +459,7 @@ export function startApp() {
       countEl.textContent = active.length;
       if (active.length !== prev) {
         countEl.classList.remove("bump");
-        void countEl.offsetWidth; // reflow to restart animation
+        void countEl.offsetWidth; // restart bump anim
         countEl.classList.add("bump");
       }
 
@@ -467,8 +493,10 @@ export function startApp() {
     setMsg("", false, 1000);
   });
 
-  // (Removed) — chips no longer stop your session on click or keypress
+  // Active chip handlers (click/keyboard)
+  initActiveChipHandlers();
 
+  // Start/Stop buttons
   startBtn.addEventListener("click", startUsing);
   stopBtn.addEventListener("click", stopUsing);
 
