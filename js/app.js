@@ -1,14 +1,7 @@
 // js/app.js
 import { MEMBERS, MAX_CONCURRENT } from "./config.js";
-import {
-  ensureStatusDoc,
-  listenStatus,
-  txStart,
-  txStop,
-  listenLocales,
-  setUserLocale,
-} from "./firebase.js";
-import { initI18n, t, setLocale, getLocale } from "./i18n.js";
+import { ensureStatusDoc, listenStatus, txStart, txStop } from "./firebase.js";
+import { initI18n, t } from "./i18n.js";
 
 /* ============================= DOM SHORTCUT ============================= */
 const $ = (q) => document.querySelector(q);
@@ -33,13 +26,34 @@ const bannerEl  = $("#banner");
 const themeBtn  = $("#themeToggle");
 
 /* ================================ STATE ================================ */
-let activeCache  = [];
-let wasFull      = false;
-let isBusy       = false;
-let localesCache = {}; // { [name]: "en" | "zh" | ... }
+let activeCache = [];
+let wasFull     = false;
+let isBusy      = false;
 
 // Toggle toast popups
 const TOAST_ENABLED = false;
+
+/* ============================ THEME HELPERS ============================ */
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  try { localStorage.setItem("wm.theme", theme); } catch {}
+  if (!themeBtn) return;
+
+  // show “what will happen if you click”
+  if (theme === "dark") {
+    themeBtn.textContent = "☀️";
+    themeBtn.setAttribute("aria-pressed", "false");
+  } else {
+    themeBtn.textContent = "🌙";
+    themeBtn.setAttribute("aria-pressed", "true");
+  }
+}
+function initTheme() {
+  let stored = null;
+  try { stored = localStorage.getItem("wm.theme"); } catch {}
+  const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)")?.matches;
+  applyTheme(stored || (prefersDark ? "dark" : "light"));
+}
 
 /* ============================== UI HELPERS ============================= */
 function showConsole() {
@@ -66,11 +80,11 @@ function showBanner(text, kind = "start", holdMs = 1400) {
   setTimeout(() => bannerEl.classList.remove("show"), holdMs);
 }
 
-/* ---------- Custom <select> enhancer (accessible + iOS-safe) ---------- */
+/* ---------- Custom <select> enhancer (accessible) ---------- */
 function enhanceSelect(nativeSel, items) {
   if (!nativeSel) return;
 
-  // Portal root once (full-viewport, iOS-safe)
+  // Portal root once
   let PORTAL = document.getElementById("wm-portal");
   if (!PORTAL) {
     PORTAL = document.createElement("div");
@@ -79,7 +93,7 @@ function enhanceSelect(nativeSel, items) {
       position: "fixed",
       inset: "0",
       zIndex: "2147483647",
-      pointerEvents: "none",
+      pointerEvents: "none"
     });
     document.body.appendChild(PORTAL);
   }
@@ -141,7 +155,7 @@ function enhanceSelect(nativeSel, items) {
       transform: "translateZ(0)",
       WebkitTransform: "translateZ(0)",
       pointerEvents: "auto",
-      opacity: "1",
+      opacity: "1"
     });
   };
 
@@ -199,17 +213,14 @@ function enhanceSelect(nativeSel, items) {
     else if (e.key === "Escape") { e.preventDefault(); close(); }
   });
 
-  // Outside click while open (don’t steal focus back)
   const onOutside = (e) => {
     if (wrapper.getAttribute("aria-expanded") !== "true") return;
-    const portal = document.getElementById("wm-portal");
-    if (wrapper.contains(e.target) || portal?.contains(e.target)) return;
+    if (wrapper.contains(e.target) || document.getElementById("wm-portal")?.contains(e.target)) return;
     close(false);
   };
   document.addEventListener("pointerdown", onOutside, true);
   document.addEventListener("click", onOutside, true);
 
-  // keep aria-label localized
   window.addEventListener("wm:localechange", () => {
     btn.setAttribute("aria-label", t("your_name"));
   });
@@ -368,11 +379,13 @@ async function stopUsing() {
 }
 
 /* ============================ ACTIVE CHIP UX =========================== */
+/** Robust delegation to stop when clicking your own active chip */
 function initActiveChipHandlers() {
   if (!listEl) return;
 
-  // Click to stop (your own chip only)
+  // Click to stop (own chip only)
   listEl.addEventListener("click", (e) => {
+    // Guard Text nodes
     const tgt = e.target instanceof Element ? e.target : e.target?.parentElement;
     const li  = tgt?.closest?.(".name");
     if (!li) return;
@@ -415,18 +428,9 @@ export function startApp() {
   // i18n
   if (langSel) {
     initI18n(langSel);
-
-    // Persist language per selected person
-    langSel.addEventListener("change", () => {
-      const me = whoSel.value;
-      if (me) setUserLocale(me, langSel.value);
-    });
-
-    // Sync translations across tabs
     window.addEventListener("storage", (e) => {
       if (e.key === "wm.locale") window.dispatchEvent(new Event("wm:localechange"));
     });
-
     const rerender = () => {
       renderActiveList(activeCache);
       startBtn.textContent = t("start");
@@ -448,9 +452,8 @@ export function startApp() {
   enhanceSelect(whoSel, MEMBERS);
   limitEls.forEach(el => el && (el.textContent = MAX_CONCURRENT));
 
-  // Firestore bootstrap + subscriptions
+  // Firestore bootstrap + subscription
   ensureStatusDoc().then(() => {
-    // Live occupancy
     listenStatus((active) => {
       const prev = parseInt(countEl.textContent || "0", 10);
       countEl.textContent = active.length;
@@ -478,17 +481,6 @@ export function startApp() {
       }
       wasFull = isFull;
     });
-
-    // Live locales map
-    listenLocales((map) => {
-      localesCache = map || {};
-      const me = whoSel.value;
-      const saved = me ? localesCache[me] : null;
-      if (saved && saved !== getLocale()) {
-        if (langSel) langSel.value = saved;
-        setLocale(saved);
-      }
-    });
   });
 
   // Controls
@@ -499,13 +491,6 @@ export function startApp() {
     stopBtn.disabled  = !iAmUsing;
     renderActiveList(activeCache); // refresh “on” highlight
     setMsg("", false, 1000);
-
-    // Apply that person's saved locale, if any
-    const saved = localesCache[me];
-    if (saved && saved !== getLocale()) {
-      if (langSel) langSel.value = saved;
-      setLocale(saved);
-    }
   });
 
   // Active chip handlers (click/keyboard)
