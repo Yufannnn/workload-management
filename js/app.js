@@ -3,7 +3,6 @@ import { MEMBERS, MAX_CONCURRENT } from "./config.js?v=20251013a";
 import { ensureStatusDoc, listenStatus, txStart, txStop } from "./firebase.js?v=20251013a";
 import { initI18n, t, setLocale } from "./i18n.js?v=20251013a";
 
-
 const $ = (q) => document.querySelector(q);
 
 /* ================================ NODES ================================ */
@@ -28,7 +27,7 @@ const bannerEl  = $("#banner");
 let activeCache = [];
 let wasFull     = false;
 let isBusy      = false;
-let lastMsg     = { key: null, vars: {}, isError: false }; // keep last i18n message
+let lastMsg     = { key: null, vars: {}, isError: false }; // remember last inline i18n msg
 
 const TOAST_ENABLED = false;
 
@@ -40,8 +39,13 @@ function showConsole() {
   document.querySelector(".reveal-child")?.classList.add("show");
   whoSel?.focus({ preventScroll: true });
 }
+
 function populateNames() {
-  whoSel.innerHTML = MEMBERS.map(n => `<option value="${n}">${n}</option>`).join("");
+  // empty placeholder option up top
+  whoSel.innerHTML =
+    `<option value="" selected disabled hidden></option>` +
+    MEMBERS.map(n => `<option value="${n}">${n}</option>`).join("");
+
   limitEls.forEach(el => el && (el.textContent = MAX_CONCURRENT));
 }
 
@@ -70,7 +74,7 @@ function setI18nMsg(key, vars = {}, isError = false, holdMs = 1500) {
   if (!msgEl) return;
 
   if (!key) {
-    // Hide only; preserve last key/vars so we can re-translate later
+    // Hide only; keep last key/vars so we can re-translate later
     msgEl.classList.remove("show", "err");
     clearTimeout(setMsg._timer);
     return;
@@ -85,6 +89,8 @@ function setI18nMsg(key, vars = {}, isError = false, holdMs = 1500) {
 /* ----------------------------- Cool select ---------------------------- */
 function enhanceSelect(nativeSel, items) {
   if (!nativeSel) return;
+
+  // portal for the floating list
   let PORTAL = document.getElementById("wm-portal");
   if (!PORTAL) {
     PORTAL = document.createElement("div");
@@ -104,11 +110,15 @@ function enhanceSelect(nativeSel, items) {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "cool-select__button";
-  btn.setAttribute("aria-label", t("your_name"));
+  btn.setAttribute("aria-label", t("your_name")); // accessible name only
 
   const label = document.createElement("span");
   label.className = "cool-select__label";
-  label.textContent = nativeSel.value || items[0];
+
+  // no visible placeholder text—just an empty label until user picks
+  const showPlaceholder = () => { label.textContent = ""; btn.classList.add("is-placeholder"); };
+  const clearPlaceholder = () => btn.classList.remove("is-placeholder");
+  if (!nativeSel.value) showPlaceholder(); else { clearPlaceholder(); label.textContent = nativeSel.value; }
 
   const chev = document.createElement("span");
   chev.className = "cool-select__chev";
@@ -134,12 +144,11 @@ function enhanceSelect(nativeSel, items) {
   nativeSel.parentNode.insertBefore(wrapper, nativeSel.nextSibling);
 
   const placeList = () => {
-    const r = btn.getBoundingClientRect();
+    const r  = btn.getBoundingClientRect();
     const vv = window.visualViewport;
     const offX = vv ? vv.offsetLeft : 0;
     const offY = vv ? vv.offsetTop  : 0;
     const vh   = vv ? vv.height     : window.innerHeight;
-
     Object.assign(list.style, {
       position: "fixed",
       left: `${Math.round(offX + r.left)}px`,
@@ -148,7 +157,6 @@ function enhanceSelect(nativeSel, items) {
       maxHeight: `${Math.max(160, Math.min(320, vh - (r.bottom + 6) - 12))}px`,
       zIndex: "2147483647",
       transform: "translateZ(0)",
-      WebkitTransform: "translateZ(0)",
       pointerEvents: "auto",
       opacity: "1"
     });
@@ -180,7 +188,8 @@ function enhanceSelect(nativeSel, items) {
 
   function selectValue(v) {
     nativeSel.value = v;
-    label.textContent = v;
+    label.textContent = v;        // now show the chosen name
+    clearPlaceholder();
     list.querySelectorAll(".cool-option").forEach(li => {
       li.dataset.selected = String(li.dataset.value === v);
     });
@@ -216,6 +225,7 @@ function enhanceSelect(nativeSel, items) {
   document.addEventListener("pointerdown", onOutside, true);
   document.addEventListener("click", onOutside, true);
 
+  // only aria-label changes with locale; we keep the visible label empty until chosen
   window.addEventListener("wm:localechange", () => {
     btn.setAttribute("aria-label", t("your_name"));
   });
@@ -229,16 +239,18 @@ function setUsageVisuals(count) {
   dot.classList.remove("state-0","state-1","state-2","state-3");
   dot.classList.add(`state-${state}`);
 }
+
 function renderActiveList(active) {
   const me = whoSel.value;
   listEl.innerHTML = active.length
     ? active.map(n => `<li class="name ${n === me ? "on" : ""}" data-name="${n}" tabindex="0">${n}</li>`).join("")
     : `<li class="muted">${t("nobody")}</li>`;
 }
+
 function updateButtons(active) {
   const me = whoSel.value;
-  const iAmUsing = active.includes(me);
-  startBtn.disabled = iAmUsing || active.length >= MAX_CONCURRENT;
+  const iAmUsing = !!me && active.includes(me);
+  startBtn.disabled = !me || iAmUsing || active.length >= MAX_CONCURRENT;
   stopBtn.disabled  = !iAmUsing;
 }
 
@@ -305,7 +317,9 @@ function stopPoof(x = window.innerWidth / 2, y = appEl.getBoundingClientRect().t
 /* =============================== ACTIONS ============================== */
 async function startUsing() {
   const me = whoSel.value;
+  if (!me) { setI18nMsg("your_name", {}, true, 1200); return; } // must pick a name first
   if (isBusy) return;
+
   isBusy = true;
   startBtn.disabled = true;
 
@@ -333,6 +347,7 @@ async function startUsing() {
     isBusy = false;
   }
 }
+
 async function stopUsing() {
   const me = whoSel.value;
   try {
@@ -386,7 +401,6 @@ export function startApp() {
       renderActiveList(activeCache);
       startBtn.textContent = t("start");
       stopBtn.textContent  = t("stop");
-      // re-translate the last message (if any)
       if (lastMsg.key) setI18nMsg(lastMsg.key, lastMsg.vars, lastMsg.isError, 3000);
     };
     window.addEventListener("wm:localechange", rerender);
@@ -433,8 +447,8 @@ export function startApp() {
 
   whoSel.addEventListener("change", () => {
     const me = whoSel.value;
-    const iAmUsing = activeCache.includes(me);
-    startBtn.disabled = iAmUsing || activeCache.length >= MAX_CONCURRENT;
+    const iAmUsing = !!me && activeCache.includes(me);
+    startBtn.disabled = !me || iAmUsing || activeCache.length >= MAX_CONCURRENT;
     stopBtn.disabled  = !iAmUsing;
     renderActiveList(activeCache);
     setI18nMsg(null);

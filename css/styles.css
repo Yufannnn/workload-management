@@ -140,24 +140,47 @@ p{ margin:6px 0; color:var(--muted) }
 
 
 /* ============== 06) GRID / CARD / LABELS ============== */
-.grid{ display:grid; grid-template-columns:1fr; gap:12px; margin-top:16px }
-@media (min-width:720px){
-  .grid{ grid-template-columns: 1fr 1fr; align-items: stretch; }
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 16px;
 }
 
-.card{
-  background:#0f1428;
-  border:1px solid rgba(120,150,255,.20);
-  border-radius:12px; padding:14px;
-  color:var(--ink);
+@media (min-width: 720px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
+  }
+}
+
+.card {
+  background: #0f1428;
+  border: 1px solid rgba(120,150,255,.20);
+  border-radius: 12px;
+  padding: 14px;
+  color: var(--ink);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
-  display:flex; flex-direction:column;
-}
-label{ display:block; margin-bottom:6px; color:var(--muted); font-size:14px }
+  display: flex;
+  flex-direction: column;
 
-/* keep hint at the bottom-right of card */
-.card .hint.muted{
-  margin-top:auto; margin-bottom:0; text-align:right;
+  /* space variable for footer hint */
+  --footer-gap: 14px;
+}
+
+label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* keep hint pinned at bottom-right, with breathing room */
+.card .hint.muted {
+  margin-top: auto;          /* push to bottom */
+  padding-top: var(--footer-gap); /* create space from content above */
+  margin-bottom: 0;
+  text-align: right;
 }
 
 
@@ -207,7 +230,7 @@ button:disabled{ opacity:.55; cursor:not-allowed }
   position: fixed;
   top: 16px;
   right: 16px;
-  z-index: 100;   /* above splash (9999) */
+  z-index: 100;
   pointer-events: auto;
 }
 #lang{
@@ -234,98 +257,62 @@ button:disabled{ opacity:.55; cursor:not-allowed }
 #lang option{ background:#0b1226; color:var(--ink); }
 
 
-/* ============== 09) CUSTOM “COOL SELECT” + PORTAL ===== */
-/* Wrapper */
-.cool-select{
-  position:relative;
-  font-size:15px;
-  transform: translateZ(0); /* create stacking context */
-}
-.cool-select[aria-expanded="true"]{ z-index: 9999; }
-
-/* Trigger button */
-.cool-select__button{
-  width:100%;
-  display:flex; align-items:center; justify-content:space-between; gap:10px;
-  height:46px; padding:0 14px;
-  border-radius:12px; border:1px solid rgba(130,160,255,.28);
-  background: linear-gradient(180deg, rgba(28,36,70,.28), rgba(5,10,26,.42));
-  color:var(--ink);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 4px 18px rgba(2,6,23,.18);
-  cursor:pointer;
-  transition: box-shadow .2s ease, border-color .2s ease, transform .05s ease, filter .18s ease;
-}
-.cool-select__button:hover{ filter:brightness(1.06); border-color: rgba(160,185,255,.45) }
-.cool-select__button:active{ transform: translateY(.5px) }
-.cool-select__button:focus-visible{
-  outline:none;
-  box-shadow:
-    0 0 0 3px rgba(139,92,246,.28),
-    0 0 0 1px rgba(139,92,246,.55) inset,
-    inset 0 1px 0 rgba(255,255,255,.08);
-  border-color: rgba(139,92,246,.55);
-}
-.cool-select__label{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
-
-/* Jewel spinner */
-.cool-select__chev{ width:18px; height:18px; position:relative; flex:0 0 auto; border-radius:50% }
-.cool-select__chev::before{
-  content:""; position:absolute; inset:0; border-radius:50%;
-  background: conic-gradient(from 0deg,
-    rgba(139,92,246,0) 0deg,
-    rgba(139,92,246,.65) 90deg,
-    rgba(59,130,246,.65) 180deg,
-    rgba(139,92,246,.65) 270deg,
-    rgba(139,92,246,0) 360deg);
-  opacity:0; animation: spin 1.6s linear infinite; animation-play-state: paused;
-  transition: opacity .15s ease;
-}
-.cool-select[aria-expanded="true"] .cool-select__chev::before{ opacity:.85; animation-play-state: running; }
-.cool-select__button:active .cool-select__chev::before{ opacity:.75; animation-play-state: running; }
-
-/* Dropdown list (when kept in-flow — JS ports it to portal when open) */
+/* Dropdown list (always vertical, 1 column) */
 .cool-select__list{
-  position:absolute; left:0; right:0; top: calc(100% + 6px);
-  background:#0f1428;
-  border:1px solid rgba(120,150,255,.25);
-  border-radius:12px;
-  box-shadow:0 20px 40px rgba(2,6,23,.45), inset 0 1px 0 rgba(255,255,255,.03);
-  padding:6px;
-  max-height:220px; overflow:auto;
-  z-index:10000;
+  position: absolute;
+  left: 0; right: 0; top: calc(100% + 6px);
+  background: #0f1428;
+  border: 1px solid rgba(120,150,255,.25);
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(2,6,23,.45), inset 0 1px 0 rgba(255,255,255,.03);
+  padding: 6px;
+  max-height: 220px;
+  overflow: auto;
+  z-index: 10000;
+
+  /* force vertical layout */
+  display: flex;             /* <— stack items */
+  flex-direction: column;    /* <— one column only */
+  flex-wrap: nowrap;         /* <— no wrapping to new row */
+  gap: 4px;                  /* spacing between items */
+  column-count: 1;           /* defense vs. multi-column resets */
+  columns: auto;             /* defense vs. inherited columns */
+
   transform: translateY(6px) scale(.98) translateZ(0);
-  opacity:0; pointer-events:none;
+  opacity: 0; pointer-events: none;
   transition: opacity .18s ease, transform .18s ease;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  list-style: none;          /* remove bullets */
+  margin: 0;                 /* reset in case of global ul styles */
 }
-.cool-select[aria-expanded="true"] .cool-select__list{ opacity:1; transform:none; pointer-events:auto }
+.cool-select[aria-expanded="true"] .cool-select__list{
+  opacity: 1; transform: none; pointer-events: auto;
+}
 
-/* Options */
+.cool-select__button.is-placeholder .cool-select__label { opacity:.55; }
+
+/* Options (full width rows) */
 .cool-option{
-  list-style:none; padding:10px; border-radius:10px; color:var(--ink);
-  cursor:pointer; display:flex; align-items:center; justify-content:space-between;
+  width: 100%;               /* <— consume full row */
+  list-style: none;
+  margin: 0;
+  padding: 10px;
+  border-radius: 10px;
+  color: var(--ink);
+  background: transparent;
+  cursor: pointer;
+
+  display: flex;             /* keep label/right affordance aligned */
+  align-items: center;
+  justify-content: space-between;
+
+  white-space: nowrap;       /* prevent line breaks inside an item */
   transition: background .12s ease, outline-color .12s ease;
 }
 .cool-option[data-selected="true"]{ background:#0e1530; outline:1px solid rgba(139,92,246,.35) }
 .cool-option:hover{ background:#0c1226 }
 .cool-option:focus{ outline:2px solid rgba(139,92,246,.55); outline-offset:2px }
-
-/* iOS-safe full-viewport portal; list is appended here while open */
-#wm-portal{ position:fixed; inset:0; z-index:2147483647; pointer-events:none }
-#wm-portal > *{ pointer-events:auto }
-
-/* (Legacy helper if you ever apply the floating class via CSS) */
-.cool-select__list--floating{
-  position: fixed;
-  left: 0; top: 0;
-  width: auto;
-  max-height: 220px;
-  z-index: 100000;
-  transform: none;
-  opacity: 1;
-  pointer-events: auto;
-}
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce){

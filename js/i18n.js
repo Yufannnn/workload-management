@@ -70,7 +70,6 @@ export const DICTS = {
     now_using: "你现在已标记为“使用中”。✅",
     now_not_using: "你现在已标记为“未使用”。✋",
     error_generic: "出错了，请重试。",
-    
     slot_opened: "新空位出现啦。🎉",
     nobody: "目前没有人在使用服务器。",
     footer_built: "由 GitHub Pages 与 Firebase 搭建。",
