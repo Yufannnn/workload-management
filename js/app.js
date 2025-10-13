@@ -28,6 +28,7 @@ let activeCache = [];
 let wasFull     = false;
 let isBusy      = false;
 let lastMsg     = { key: null, vars: {}, isError: false }; // remember last inline i18n msg
+let msgIsActive = false; // guards soft clears
 
 const TOAST_ENABLED = false;
 
@@ -60,29 +61,58 @@ function showBanner(text, kind = "start", holdMs = 1400) {
 }
 
 /* --------------------------- Inline message --------------------------- */
-function setMsg(text, isError = false, holdMs = 1500) {
+function hardClearMsg() {
   if (!msgEl) return;
-  msgEl.textContent = text || "";
-  msgEl.classList.toggle("err", !!isError);
-  msgEl.classList.toggle("show", !!text);
   clearTimeout(setMsg._timer);
-  if (text) setMsg._timer = setTimeout(() => msgEl.classList.remove("show"), Math.max(holdMs, 1));
+  msgEl.classList.remove("show", "err");
+  msgEl.textContent = "";
+  msgEl.removeAttribute("data-i18n");
+  msgEl.removeAttribute("data-i18n-vars");
+  msgIsActive = false;
 }
 
-/** i18n-aware inline message that survives locale changes */
-function setI18nMsg(key, vars = {}, isError = false, holdMs = 1500) {
+/** Show a message for `holdMs` (default 2000ms), then fade & hard clear */
+function setMsg(text, isError = false, holdMs = 2000) {
+  if (!msgEl) return;
+
+  // show/update
+  msgEl.classList.toggle("err", !!isError);
+  msgEl.textContent = text || "";
+  msgEl.classList.toggle("show", !!text);
+
+  // clear previous timer and mark active
+  clearTimeout(setMsg._timer);
+  msgIsActive = !!text;
+
+  // schedule hide + hard clear
+  if (text) {
+    setMsg._timer = setTimeout(() => {
+      msgEl.classList.remove("show");
+      // allow CSS transition to finish, then hard clear
+      setTimeout(hardClearMsg, 200);
+    }, Math.max(holdMs, 1));
+  }
+}
+
+/** i18n-aware inline message that survives locale changes.
+ *  If key is null -> soft clear (don’t interrupt an active message). */
+function setI18nMsg(key, vars = {}, isError = false, holdMs = 2000) {
   if (!msgEl) return;
 
   if (!key) {
-    // Hide only; keep last key/vars so we can re-translate later
-    msgEl.classList.remove("show", "err");
-    clearTimeout(setMsg._timer);
+    // SOFT CLEAR: only clear if nothing is currently showing
+    if (!msgIsActive) hardClearMsg();
     return;
   }
 
+  // remember last so locale switches can re-render it
   lastMsg = { key, vars, isError };
+
+  // stamp for future re-translation
   msgEl.dataset.i18n = key;
   msgEl.dataset.i18nVars = JSON.stringify(vars || {});
+
+  // render now with timer
   setMsg(t(key, vars), isError, holdMs);
 }
 
@@ -317,31 +347,31 @@ function stopPoof(x = window.innerWidth / 2, y = appEl.getBoundingClientRect().t
 /* =============================== ACTIONS ============================== */
 async function startUsing() {
   const me = whoSel.value;
-  if (!me) { setI18nMsg("your_name", {}, true, 1200); return; } // must pick a name first
+  if (!me) { setI18nMsg("your_name", {}, true, 2000); return; } // must pick a name first
   if (isBusy) return;
 
   isBusy = true;
   startBtn.disabled = true;
 
   try {
-    if (activeCache.includes(me)) { setI18nMsg("already_using", {}, false, 1200); return; }
+    if (activeCache.includes(me)) { setI18nMsg("already_using", {}, false, 2000); return; }
     if (activeCache.length >= MAX_CONCURRENT) {
-      setI18nMsg("full_now", { count: activeCache.length, max: MAX_CONCURRENT }, true, 3000);
+      setI18nMsg("full_now", { count: activeCache.length, max: MAX_CONCURRENT }, true, 2000);
       return;
     }
     const key = activeCache.length === MAX_CONCURRENT - 1 ? "last_slot" : "reserving";
-    setI18nMsg(key, {}, false, 1000);
+    setI18nMsg(key, {}, false, 1200);
 
     await txStart(me, MAX_CONCURRENT);
-    setI18nMsg("now_using", {}, false, 1200);
+    setI18nMsg("now_using", {}, false, 2000);
     showBanner(t("banner_start"), "start");
     confettiBurst();
   } catch (e) {
     if (e?.message === "FULL") {
-      setI18nMsg("full_now", { count: activeCache.length, max: MAX_CONCURRENT }, true, 3000);
+      setI18nMsg("full_now", { count: activeCache.length, max: MAX_CONCURRENT }, true, 2000);
     } else {
       console.error(e);
-      setI18nMsg("error_generic", {}, true, 1400);
+      setI18nMsg("error_generic", {}, true, 2000);
     }
   } finally {
     isBusy = false;
@@ -352,12 +382,12 @@ async function stopUsing() {
   const me = whoSel.value;
   try {
     await txStop(me);
-    setI18nMsg("now_not_using", {}, false, 1200);
+    setI18nMsg("now_not_using", {}, false, 2000);
     showBanner(t("banner_stop"), "stop");
     stopPoof();
   } catch (e) {
     console.error(e);
-    setI18nMsg("error_generic", {}, true, 1400);
+    setI18nMsg("error_generic", {}, true, 2000);
   }
 }
 
@@ -401,7 +431,7 @@ export function startApp() {
       renderActiveList(activeCache);
       startBtn.textContent = t("start");
       stopBtn.textContent  = t("stop");
-      if (lastMsg.key) setI18nMsg(lastMsg.key, lastMsg.vars, lastMsg.isError, 3000);
+      if (lastMsg.key) setI18nMsg(lastMsg.key, lastMsg.vars, lastMsg.isError, 2000);
     };
     window.addEventListener("wm:localechange", rerender);
     langSel.addEventListener("change", rerender);
@@ -435,11 +465,12 @@ export function startApp() {
       const isFull = active.length >= MAX_CONCURRENT;
 
       if (isFull && !iAmUsing && !wasFull) {
-        setI18nMsg("full_now", { count: active.length, max: MAX_CONCURRENT }, true, 3000);
+        setI18nMsg("full_now", { count: active.length, max: MAX_CONCURRENT }, true, 2000);
       } else if (!isFull && wasFull) {
         setI18nMsg("slot_opened", {}, false, 2000);
       } else {
-        setI18nMsg(null); // hides but keeps lastMsg for future re-translate
+        // SOFT clear so we don't interrupt a message that's already showing
+        setI18nMsg(null);
       }
       wasFull = isFull;
     });
@@ -451,6 +482,7 @@ export function startApp() {
     startBtn.disabled = !me || iAmUsing || activeCache.length >= MAX_CONCURRENT;
     stopBtn.disabled  = !iAmUsing;
     renderActiveList(activeCache);
+    // soft clear (don’t interrupt if a message is already visible)
     setI18nMsg(null);
   });
 
