@@ -1,11 +1,12 @@
 // js/app.js
-import { MEMBERS, MAX_CONCURRENT } from "./config.js";
-import { ensureStatusDoc, listenStatus, txStart, txStop } from "./firebase.js";
-import { initI18n, t, setLocale } from "./i18n.js";
+import { MEMBERS, MAX_CONCURRENT } from "./config.js?v=20251013a";
+import { ensureStatusDoc, listenStatus, txStart, txStop } from "./firebase.js?v=20251013a";
+import { initI18n, t, setLocale } from "./i18n.js?v=20251013a";
+
 
 const $ = (q) => document.querySelector(q);
 
-/* NODES */
+/* ================================ NODES ================================ */
 const splash    = $("#splash");
 const enterBtn  = $("#enterBtn");
 const appEl     = $("#app");
@@ -22,34 +23,16 @@ const listEl    = $("#active-list");
 const msgEl     = $("#msg");
 const toastEl   = $("#toast");
 const bannerEl  = $("#banner");
-const themeBtn  = $("#themeToggle");
 
-/* STATE */
+/* ================================ STATE ================================ */
 let activeCache = [];
 let wasFull     = false;
 let isBusy      = false;
+let lastMsg     = { key: null, vars: {}, isError: false }; // keep last i18n message
 
 const TOAST_ENABLED = false;
 
-/* THEME */
-function applyTheme(theme) {
-  document.documentElement.setAttribute("data-theme", theme);
-  try { localStorage.setItem("wm.theme", theme); } catch {}
-  if (!themeBtn) return;
-  if (theme === "dark") {
-    themeBtn.textContent = "☀️"; themeBtn.setAttribute("aria-pressed", "false");
-  } else {
-    themeBtn.textContent = "🌙"; themeBtn.setAttribute("aria-pressed", "true");
-  }
-}
-function initTheme() {
-  let stored = null;
-  try { stored = localStorage.getItem("wm.theme"); } catch {}
-  const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)")?.matches;
-  applyTheme(stored || (prefersDark ? "dark" : "light"));
-}
-
-/* UI HELPERS */
+/* =============================== UI HELPERS =========================== */
 function showConsole() {
   document.body.classList.remove("splash-on");
   splash.classList.add("hide");
@@ -62,7 +45,7 @@ function populateNames() {
   limitEls.forEach(el => el && (el.textContent = MAX_CONCURRENT));
 }
 
-/* Banner */
+/* ------------------------------ Banner -------------------------------- */
 function showBanner(text, kind = "start", holdMs = 1400) {
   if (!bannerEl) return;
   bannerEl.textContent = text;
@@ -72,7 +55,7 @@ function showBanner(text, kind = "start", holdMs = 1400) {
   setTimeout(() => bannerEl.classList.remove("show"), holdMs);
 }
 
-/* INLINE MESSAGE (i18n-aware) */
+/* --------------------------- Inline message --------------------------- */
 function setMsg(text, isError = false, holdMs = 1500) {
   if (!msgEl) return;
   msgEl.textContent = text || "";
@@ -82,22 +65,24 @@ function setMsg(text, isError = false, holdMs = 1500) {
   if (text) setMsg._timer = setTimeout(() => msgEl.classList.remove("show"), Math.max(holdMs, 1));
 }
 
-/** Stamp #msg with data-i18n + data-i18n-vars so applyTranslations() will re-render it */
+/** i18n-aware inline message that survives locale changes */
 function setI18nMsg(key, vars = {}, isError = false, holdMs = 1500) {
   if (!msgEl) return;
+
   if (!key) {
-    msgEl.removeAttribute("data-i18n");
-    msgEl.removeAttribute("data-i18n-vars");
-    setMsg("", false, 0);
+    // Hide only; preserve last key/vars so we can re-translate later
+    msgEl.classList.remove("show", "err");
+    clearTimeout(setMsg._timer);
     return;
   }
+
+  lastMsg = { key, vars, isError };
   msgEl.dataset.i18n = key;
-  // only include keys you actually need (helps avoid JSON churn)
   msgEl.dataset.i18nVars = JSON.stringify(vars || {});
   setMsg(t(key, vars), isError, holdMs);
 }
 
-/* COOL SELECT (iOS-safe floating list) */
+/* ----------------------------- Cool select ---------------------------- */
 function enhanceSelect(nativeSel, items) {
   if (!nativeSel) return;
   let PORTAL = document.getElementById("wm-portal");
@@ -236,7 +221,7 @@ function enhanceSelect(nativeSel, items) {
   });
 }
 
-/* VISUALS */
+/* =============================== VISUALS =============================== */
 function setUsageVisuals(count) {
   const ratio = count / MAX_CONCURRENT;
   document.documentElement.style.setProperty("--usage", String(ratio));
@@ -257,7 +242,7 @@ function updateButtons(active) {
   stopBtn.disabled  = !iAmUsing;
 }
 
-/* Toast (optional) */
+/* ================================ TOAST ================================ */
 function showToast(text, kind = "ok", holdMs = 1000) {
   if (!TOAST_ENABLED || !toastEl) return;
   toastEl.textContent = text;
@@ -267,7 +252,7 @@ function showToast(text, kind = "ok", holdMs = 1000) {
   showToast._timer = setTimeout(() => toastEl.classList.remove("show"), Math.max(holdMs, 1));
 }
 
-/* FX */
+/* ================================= FX ================================= */
 function confettiBurst(x = window.innerWidth / 2, y = appEl.getBoundingClientRect().top + 60) {
   if (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) return;
   const n = 22, base = 900;
@@ -317,7 +302,7 @@ function stopPoof(x = window.innerWidth / 2, y = appEl.getBoundingClientRect().t
   }
 }
 
-/* ACTIONS */
+/* =============================== ACTIONS ============================== */
 async function startUsing() {
   const me = whoSel.value;
   if (isBusy) return;
@@ -361,7 +346,7 @@ async function stopUsing() {
   }
 }
 
-/* ACTIVE CHIP UX */
+/* =========================== ACTIVE CHIP UX =========================== */
 function initActiveChipHandlers() {
   if (!listEl) return;
 
@@ -385,15 +370,9 @@ function initActiveChipHandlers() {
   });
 }
 
-/* BOOT */
+/* ================================= BOOT ============================== */
 export function startApp() {
   document.body.classList.add("splash-on");
-
-  initTheme();
-  themeBtn?.addEventListener("click", () => {
-    const cur = document.documentElement.getAttribute("data-theme") || "dark";
-    applyTheme(cur === "dark" ? "light" : "dark");
-  });
 
   if (langSel) {
     initI18n(langSel);
@@ -403,14 +382,15 @@ export function startApp() {
       if (e.key === "wm.locale" && e.newValue) setLocale(e.newValue);
     });
 
-    // Translate static bits on locale change
     const rerender = () => {
       renderActiveList(activeCache);
       startBtn.textContent = t("start");
       stopBtn.textContent  = t("stop");
-      // #msg re-renders via applyTranslations, because we stamped data-i18n on it
+      // re-translate the last message (if any)
+      if (lastMsg.key) setI18nMsg(lastMsg.key, lastMsg.vars, lastMsg.isError, 3000);
     };
     window.addEventListener("wm:localechange", rerender);
+    langSel.addEventListener("change", rerender);
   }
 
   splash.addEventListener("click", showConsole);
@@ -445,7 +425,7 @@ export function startApp() {
       } else if (!isFull && wasFull) {
         setI18nMsg("slot_opened", {}, false, 2000);
       } else {
-        setI18nMsg(null);
+        setI18nMsg(null); // hides but keeps lastMsg for future re-translate
       }
       wasFull = isFull;
     });

@@ -1,21 +1,29 @@
 // i18n.js
 
-// Display order you wanted
 export const LOCALES = [
-  { code: 'en', label: 'English' },
-  { code: 'zh', label: '中文' },
-  { code: 'es', label: 'Español' },
-  { code: 'ru', label: 'Русский' },
-  { code: 'fr', label: 'Français' },
-  { code: 'de', label: 'Deutsch' },
-  { code: 'ko', label: '한국어' },
-  { code: 'ja', label: '日本語' },
+  { code: 'en',       label: 'English' },   // 1) pinned
+  { code: 'zh',       label: '中文' },       // 2) pinned
+
+  // Alphabetical by native label
+  { code: 'de',       label: 'Deutsch' },
+  { code: 'es',       label: 'Español' },
+  { code: 'fr',       label: 'Français' },
+  { code: 'ja',       label: '日本語' },
+  { code: 'ko',       label: '한국어' },
+  { code: 'ru',       label: 'Русский' },
+  { code: 'qya',      label: 'Quenya' },
+  { code: 'sjn',      label: 'Sindarin' },
+  { code: 'tlh',      label: 'tlhIngan Hol' },
+
+  // Fun novelty languages last
+  { code: 'x-pirate', label: '🏴‍☠️' },
+  { code: 'x-emoji',  label: '😀' },
 ];
 
-// code -> label map for building the <select>
+
+// code -> label map for building the <select> (optional helper)
 const LABELS = Object.fromEntries(LOCALES.map(l => [l.code, l.label]));
 
-// All strings
 export const DICTS = {
   en: {
     title: "Workload Management",
@@ -30,7 +38,7 @@ export const DICTS = {
     banner_start: "Ready up — focus time!",
     banner_stop: "Wrap up — break time!",
     already_using: "You are already marked as USING.",
-    cannot_start_full: "Cannot start: server is full ({count}/{max}).",
+    cannot_start_full: "Cannot start: server is full ({count}/{max}).", 
     full_now: "Server is full ({count}/{max}). Please try again later.",
     last_slot: "Heads-up: last slot — checking…",
     reserving: "Reserving a slot…",
@@ -39,7 +47,6 @@ export const DICTS = {
     error_generic: "Something went wrong. Please try again.",
     slot_opened: "A slot just opened. 🎉",
     nobody: "Nobody is using the server.",
-    // footer
     footer_built: "Built with GitHub Pages + Firebase.",
     footer_copyright: "© {year} {owner}",
   },
@@ -57,15 +64,15 @@ export const DICTS = {
     banner_stop: "准备准备，休息时间到！",
     already_using: "你已经处于“使用中”。",
     cannot_start_full: "无法开始：服务器已满（{count}/{max}）。",
-    full_now: "服务器已满（{count}/{max}）。请稍后重试。",
+    full_now: "服务器已满（{count}/{max}）。请稍后再试。",
     last_slot: "提醒：最后一个名额——正在确认…",
     reserving: "正在占用名额…",
     now_using: "你现在已标记为“使用中”。✅",
     now_not_using: "你现在已标记为“未使用”。✋",
     error_generic: "出错了，请重试。",
+    
     slot_opened: "新空位出现啦。🎉",
     nobody: "目前没有人在使用服务器。",
-    // footer
     footer_built: "由 GitHub Pages 与 Firebase 搭建。",
     footer_copyright: "© {year} {owner}",
   },
@@ -83,7 +90,7 @@ export const DICTS = {
     banner_stop: "¡Hecho! Hora de descansar.",
     already_using: "Ya estás marcado como EN USO.",
     cannot_start_full: "No se puede iniciar: el servidor está lleno ({count}/{max}).",
-    full_now: "El servidor está lleno ({count}/{max}). Inténtalo más tarde.",
+    full_now: "El servidor está lleno ({count}/{max}). Por favor, inténtalo más tarde.",
     last_slot: "Atento: último cupo — comprobando…",
     reserving: "Reservando un cupo…",
     now_using: "Ahora estás marcado como EN USO. ✅",
@@ -91,7 +98,6 @@ export const DICTS = {
     error_generic: "Algo salió mal. Inténtalo de nuevo.",
     slot_opened: "Se liberó un cupo. 🎉",
     nobody: "Nadie está usando el servidor.",
-    // footer
     footer_built: "Creado con GitHub Pages y Firebase.",
     footer_copyright: "© {year} {owner}",
   },
@@ -108,8 +114,8 @@ export const DICTS = {
     banner_start: "Готовимся — время работать!",
     banner_stop: "Пауза — время отдохнуть!",
     already_using: "Вы уже отмечены как ИСПОЛЬЗУЕТЕ.",
-    cannot_start_full: "Нельзя начать: сервер заполнен ({count}/{max}).",
-    full_now: "Сервер заполнен ({count}/{max}). Попробуйте позже.",
+    cannot_start_full: "Не могу начать: сервер заполнен ({count}/{max}).",
+    full_now: "Сервер заполнен ({count}/{max}). Пожалуйста, попробуйте позже.",
     last_slot: "Внимание: последний слот — проверяем…",
     reserving: "Резервируем слот…",
     now_using: "Теперь вы отмечены как ИСПОЛЬЗУЕТЕ. ✅",
@@ -117,7 +123,6 @@ export const DICTS = {
     error_generic: "Что-то пошло не так. Попробуйте ещё раз.",
     slot_opened: "Освободился слот. 🎉",
     nobody: "Никто не использует сервер.",
-    // footer
     footer_built: "Сделано на GitHub Pages и Firebase.",
     footer_copyright: "© {year} {owner}",
   },
@@ -134,8 +139,8 @@ export const DICTS = {
     banner_start: "En place — c’est l’heure de se concentrer !",
     banner_stop: "C’est bon — petite pause !",
     already_using: "Vous êtes déjà marqué comme EN UTILISATION.",
-    cannot_start_full: "Impossible de démarrer : serveur plein ({count}/{max}).",
-    full_now: "Serveur plein ({count}/{max}). Réessayez plus tard.",
+    cannot_start_full: "Impossible de démarrer : le serveur est plein ({count}/{max}).",
+    full_now: "Le serveur est plein ({count}/{max}). Réessayez plus tard.",
     last_slot: "Attention : dernier créneau — vérification…",
     reserving: "Réservation du créneau…",
     now_using: "Vous êtes maintenant EN UTILISATION. ✅",
@@ -143,7 +148,6 @@ export const DICTS = {
     error_generic: "Un problème est survenu. Réessayez.",
     slot_opened: "Un créneau vient de se libérer. 🎉",
     nobody: "Personne n’utilise le serveur.",
-    // footer
     footer_built: "Réalisé avec GitHub Pages et Firebase.",
     footer_copyright: "© {year} {owner}",
   },
@@ -160,8 +164,8 @@ export const DICTS = {
     banner_start: "Bereit — Fokuszeit!",
     banner_stop: "Geschafft — kurze Pause!",
     already_using: "Du bist bereits als IN BENUTZUNG markiert.",
-    cannot_start_full: "Start nicht möglich: Server voll ({count}/{max}).",
-    full_now: "Server voll ({count}/{max}). Bitte später erneut versuchen.",
+    cannot_start_full: "Starten nicht möglich: Server ist voll ({count}/{max}).",
+    full_now: "Server ist voll ({count}/{max}). Bitte später erneut versuchen.",
     last_slot: "Achtung: letzter Platz — prüfe…",
     reserving: "Platz wird reserviert…",
     now_using: "Du bist jetzt IN BENUTZUNG. ✅",
@@ -169,7 +173,6 @@ export const DICTS = {
     error_generic: "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
     slot_opened: "Ein Platz ist frei geworden. 🎉",
     nobody: "Niemand nutzt den Server.",
-    // footer
     footer_built: "Erstellt mit GitHub Pages und Firebase.",
     footer_copyright: "© {year} {owner}",
   },
@@ -186,8 +189,8 @@ export const DICTS = {
     banner_start: "준비 완료 — 집중 시간!",
     banner_stop: "정지 — 쉬는 시간!",
     already_using: "이미 ‘사용 중’으로 표시되어 있어요.",
-    cannot_start_full: "시작 불가: 서버가 가득 찼어요 ({count}/{max}).",
-    full_now: "서버가 가득 찼어요 ({count}/{max}). 잠시 후 다시 시도하세요.",
+    cannot_start_full: "시작할 수 없음: 서버가 가득 찼어요 ({count}/{max}).",
+    full_now: "서버가 가득 찼어요 ({count}/{max}). 나중에 다시 시도해 주세요.",
     last_slot: "주의: 마지막 슬롯 — 확인 중…",
     reserving: "슬롯 예약 중…",
     now_using: "이제 ‘사용 중’으로 표시됐어요. ✅",
@@ -195,7 +198,6 @@ export const DICTS = {
     error_generic: "문제가 발생했어요. 다시 시도해 주세요.",
     slot_opened: "자리가 났어요. 🎉",
     nobody: "현재 서버를 사용하는 사람이 없어요.",
-    // footer
     footer_built: "GitHub Pages와 Firebase로 제작.",
     footer_copyright: "© {year} {owner}",
   },
@@ -221,8 +223,142 @@ export const DICTS = {
     error_generic: "問題が発生しました。もう一度お試しください。",
     slot_opened: "空きが出ました。🎉",
     nobody: "現在、使用している人はいません。",
-    // footer
     footer_built: "GitHub Pages と Firebase で構築。",
+    footer_copyright: "© {year} {owner}",
+  },
+
+  // Klingon (playful approximations)
+  tlh: {
+    title: "Qu’ SeH",
+    splash_help: "Doch naQDaq yIngaQ—console yIpoSmoH.",
+    open_console: "console yIpoSmoH",
+    intro: "wa’logh <span class=\"accent\"><strong id=\"max\">3</strong></span> nuvpu’ neH QapmeH. ponglIj yIwIv, ghIq <em>tagh</em> / <em>mev</em> yIngaQ.",
+    your_name: "ponglIj",
+    start: "tagh",
+    stop: "mev",
+    using_now: "lo’taH",
+    updates: "HochvaD poH naQDaq chu’choH.",
+    banner_start: "Suqeq—qapmeH poH!",
+    banner_stop: "mev—leSmeH poH!",
+    already_using: "bIperlaw’ ‘e’ ‘oH lo’taH.",
+    cannot_start_full: "taghbe’: QapwI’ ghoS ‘e’ neH ({count}/{max}).",
+    full_now: "QapwI’ ghoS ‘e’ neH ({count}/{max}). reH Qapla’!",
+    last_slot: "ghIlaS: rarwI’ Qav—ma’bej…",
+    reserving: "rarwI’ wInobtaH…",
+    now_using: "DaH bIlo’taH. ✅",
+    now_not_using: "DaH bIlo’be’. ✋",
+    error_generic: "Doch qatlh. yInIDqa’.",
+    slot_opened: "rarwI’ chu’ chenmoHlu’. 🎉",
+    nobody: "pagh lo’taH De’wI’.",
+    footer_built: "GitHub Pages je Firebase lo’ta’lu’.",
+    footer_copyright: "© {year} {owner}",
+  },
+
+  // Quenya (fun/approximate)
+  qya: {
+    title: "Curo i Nauco",
+    splash_help: "Á tamma maquetassë — panta i consola.",
+    open_console: "Panta consola",
+    intro: "A quain <span class=\"accent\"><strong id=\"max\">3</strong></span> eldar órenyallo hlarë. Ápelya essë, támë <em>Yesta</em> / <em>Pusta</em>.",
+    your_name: "Esselya",
+    start: "Yesta",
+    stop: "Pusta",
+    using_now: "yúanë sí",
+    updates: "Quettar etelyar teni ilyë.",
+    banner_start: "Varya—lehta ná!",
+    banner_stop: "Á hosta—lárë ná!",
+    already_using: "Á ná quetina ve ‘YÚSANWA’.",
+    cannot_start_full: "Á yesta: i nóre ná corma ({count}/{max}).",
+    full_now: "I nóre ná corma ({count}/{max}). Á enta alassë.",
+    last_slot: "Nótima: corma tella — cansë…",
+    reserving: "Corma amarta…",
+    now_using: "Sinyë ná ‘YÚSANWA’. ✅",
+    now_not_using: "Sinyë ná ‘ÚSANWA’. ✋",
+    error_generic: "Rúcina natë. Á enta.",
+    slot_opened: "Corma pánuva. 🎉",
+    nobody: "Nemo lá yúsa i nóre.",
+    footer_built: "Nácina mi GitHub Pages ar Firebase.",
+    footer_copyright: "© {year} {owner}",
+  },
+
+  // Sindarin (fun/approximate)
+  sjn: {
+    title: "Harthad na Maethor",
+    splash_help: "Teitha ned i thîw—edregi i console.",
+    open_console: "Edregi i console",
+    intro: "Na <span class=\"accent\"><strong id=\"max\">3</strong></span> gwedyr han aphadar. Eneth lín edregi, a gogi <em>Pered</em> / <em>Dar</em>.",
+    your_name: "Eneth lín",
+    start: "Pered",
+    stop: "Dar",
+    using_now: "ediad no",
+    updates: "Nathad ned anann na bain.",
+    banner_start: "Prestannen—am manadh!",
+    banner_stop: "Dollen—lû dholl!",
+    already_using: "Cin ven ‘EDiAD’ alassen.",
+    cannot_start_full: "Ú-cheni: i edraith na cened ({count}/{max}).",
+    full_now: "I edraith na cened ({count}/{max}). Aníron aníron.",
+    last_slot: "Teithad: sad vedui — tiro…",
+    reserving: "Sad edrannen…",
+    now_using: "Sî cin na ‘EDiAD’. ✅",
+    now_not_using: "Sî cin ú-ediad. ✋",
+    error_generic: "Roch benn. Enni ad.",
+    slot_opened: "Sad edui padannen. 🎉",
+    nobody: "Ú-nen nador e-han.",
+    footer_built: "Nawad hen na GitHub Pages a Firebase.",
+    footer_copyright: "© {year} {owner}",
+  },
+
+  // Pirate (novelty)
+  "x-pirate": {
+    title: "Cap’n o’ Workloads",
+    splash_help: "Click any bilge spot t’ open th’ console, matey.",
+    open_console: "Open th’ console",
+    intro: "Up t’ <span class=\"accent\"><strong id=\"max\">3</strong></span> hands be usin’ th’ server at once. Pick yer name, then hit <em>Hoist</em> / <em>Belay</em>.",
+    your_name: "Yer name",
+    start: "Hoist",
+    stop: "Belay",
+    using_now: "sailin’ now",
+    updates: "Be refreshin’ fer all hands in real time.",
+    banner_start: "All hands—to work!",
+    banner_stop: "Belay that—rum time!",
+    already_using: "Ye be marked as A-USIN’ already.",
+    cannot_start_full: "Can’t hoist: th’ server be full ({count}/{max}).",
+    full_now: "Th’ server be full ({count}/{max}). Try again later, matey.",
+    last_slot: "Heads-up: last berth—checkin’…",
+    reserving: "Reserving yer berth…",
+    now_using: "Ye be marked A-USIN’. ✅",
+    now_not_using: "Ye be marked NOT USIN’. ✋",
+    error_generic: "Arrr, somethin’ went overboard. Try again.",
+    slot_opened: "A berth just opened! 🎉",
+    nobody: "No soul be usin’ the server.",
+    footer_built: "Made with GitHub Pages ‘n Firebase.",
+    footer_copyright: "© {year} {owner}",
+  },
+
+  // Emoji (novelty)
+  "x-emoji": {
+    title: "🧠⚙️",
+    splash_help: "👆✨🖥️🔓",
+    open_console: "🖥️🔓",
+    intro: "👥 <span class=\"accent\"><strong id=\"max\">3</strong></span> 🖥️ • 🧑‍💻👉 <em>▶️</em>/<em>⏹️</em>",
+    your_name: "🏷️",
+    start: "▶️",
+    stop: "⏹️",
+    using_now: "🟣⏳",
+    updates: "🔄⏱️👥",
+    banner_start: "🚀🧠",
+    banner_stop: "☕🛑",
+    already_using: "✅🟣",
+    cannot_start_full: "⛔🔒 ({count}/{max})",
+    full_now: "🚫🔒 ({count}/{max})",
+    last_slot: "⚠️🪑🔚",
+    reserving: "📌⏳",
+    now_using: "✅🟣",
+    now_not_using: "✋⬜️",
+    error_generic: "💥🔁",
+    slot_opened: "🎉🪑🆓",
+    nobody: "👻🚫🖥️",
+    footer_built: "🧰🌐🔥",
     footer_copyright: "© {year} {owner}",
   },
 };
@@ -261,6 +397,9 @@ export function detectLocale() {
   if (nav.startsWith("de")) return "de";
   if (nav.startsWith("ja")) return "ja";
   if (nav.startsWith("ko")) return "ko";
+  if (nav.startsWith("tlh")) return "tlh";
+  if (nav.startsWith("qya")) return "qya";
+  if (nav.startsWith("sjn")) return "sjn";
   return "en";
 }
 

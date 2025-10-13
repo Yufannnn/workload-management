@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Workload Management — 3 concurrent max</title>
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <title>Workload Management</title>
 
   <!-- Icons -->
-  <link rel="icon" href="favicon.ico" sizes="any">
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <meta name="theme-color" content="#060914">
+  <link rel="icon" href="assets/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 
   <!-- Social -->
   <meta property="og:title" content="Workload Management" />
@@ -97,18 +97,17 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
     import { getFirestore } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-    import { firebaseConfig } from "./js/config.js";
-    import { initFirebase } from "./js/firebase.js";
-    import { startApp } from "./js/app.js";
+    // add ?v=... to YOUR modules
+    import { firebaseConfig } from "./js/config.js?v=20251013a";
+    import { initFirebase } from "./js/firebase.js?v=20251013a";
+    import { startApp } from "./js/app.js?v=20251013a";
 
-    // Firebase boot
     const app = initializeApp(firebaseConfig);
     const db  = getFirestore(app);
     initFirebase(db);
-
-    // Start UI
     startApp();
   </script>
+
 
   <noscript>
     Please enable JavaScript to use this site.
