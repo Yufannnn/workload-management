@@ -1,12 +1,11 @@
 // js/app.js
 import { MEMBERS, MAX_CONCURRENT } from "./config.js";
 import { ensureStatusDoc, listenStatus, txStart, txStop } from "./firebase.js";
-import { initI18n, t } from "./i18n.js";
+import { initI18n, t, setLocale } from "./i18n.js";
 
-/* ============================= DOM SHORTCUT ============================= */
 const $ = (q) => document.querySelector(q);
 
-/* ================================ NODES ================================ */
+/* NODES */
 const splash    = $("#splash");
 const enterBtn  = $("#enterBtn");
 const appEl     = $("#app");
@@ -25,27 +24,22 @@ const toastEl   = $("#toast");
 const bannerEl  = $("#banner");
 const themeBtn  = $("#themeToggle");
 
-/* ================================ STATE ================================ */
+/* STATE */
 let activeCache = [];
 let wasFull     = false;
 let isBusy      = false;
 
-// Toggle toast popups
 const TOAST_ENABLED = false;
 
-/* ============================ THEME HELPERS ============================ */
+/* THEME */
 function applyTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
   try { localStorage.setItem("wm.theme", theme); } catch {}
   if (!themeBtn) return;
-
-  // show “what will happen if you click”
   if (theme === "dark") {
-    themeBtn.textContent = "☀️";
-    themeBtn.setAttribute("aria-pressed", "false");
+    themeBtn.textContent = "☀️"; themeBtn.setAttribute("aria-pressed", "false");
   } else {
-    themeBtn.textContent = "🌙";
-    themeBtn.setAttribute("aria-pressed", "true");
+    themeBtn.textContent = "🌙"; themeBtn.setAttribute("aria-pressed", "true");
   }
 }
 function initTheme() {
@@ -55,7 +49,7 @@ function initTheme() {
   applyTheme(stored || (prefersDark ? "dark" : "light"));
 }
 
-/* ============================== UI HELPERS ============================= */
+/* UI HELPERS */
 function showConsole() {
   document.body.classList.remove("splash-on");
   splash.classList.add("hide");
@@ -63,38 +57,54 @@ function showConsole() {
   document.querySelector(".reveal-child")?.classList.add("show");
   whoSel?.focus({ preventScroll: true });
 }
-
 function populateNames() {
   whoSel.innerHTML = MEMBERS.map(n => `<option value="${n}">${n}</option>`).join("");
   limitEls.forEach(el => el && (el.textContent = MAX_CONCURRENT));
 }
 
-/* ---------- Localized banner (top-right) ---------- */
+/* Banner */
 function showBanner(text, kind = "start", holdMs = 1400) {
   if (!bannerEl) return;
   bannerEl.textContent = text;
   bannerEl.classList.remove("start", "stop", "show");
-  // retrigger transition
   void bannerEl.offsetWidth;
   bannerEl.classList.add(kind, "show");
   setTimeout(() => bannerEl.classList.remove("show"), holdMs);
 }
 
-/* ---------- Custom <select> enhancer (accessible) ---------- */
+/* INLINE MESSAGE (i18n-aware) */
+function setMsg(text, isError = false, holdMs = 1500) {
+  if (!msgEl) return;
+  msgEl.textContent = text || "";
+  msgEl.classList.toggle("err", !!isError);
+  msgEl.classList.toggle("show", !!text);
+  clearTimeout(setMsg._timer);
+  if (text) setMsg._timer = setTimeout(() => msgEl.classList.remove("show"), Math.max(holdMs, 1));
+}
+
+/** Stamp #msg with data-i18n + data-i18n-vars so applyTranslations() will re-render it */
+function setI18nMsg(key, vars = {}, isError = false, holdMs = 1500) {
+  if (!msgEl) return;
+  if (!key) {
+    msgEl.removeAttribute("data-i18n");
+    msgEl.removeAttribute("data-i18n-vars");
+    setMsg("", false, 0);
+    return;
+  }
+  msgEl.dataset.i18n = key;
+  // only include keys you actually need (helps avoid JSON churn)
+  msgEl.dataset.i18nVars = JSON.stringify(vars || {});
+  setMsg(t(key, vars), isError, holdMs);
+}
+
+/* COOL SELECT (iOS-safe floating list) */
 function enhanceSelect(nativeSel, items) {
   if (!nativeSel) return;
-
-  // Portal root once
   let PORTAL = document.getElementById("wm-portal");
   if (!PORTAL) {
     PORTAL = document.createElement("div");
     PORTAL.id = "wm-portal";
-    Object.assign(PORTAL.style, {
-      position: "fixed",
-      inset: "0",
-      zIndex: "2147483647",
-      pointerEvents: "none"
-    });
+    Object.assign(PORTAL.style, { position:"fixed", inset:"0", zIndex:"2147483647", pointerEvents:"none" });
     document.body.appendChild(PORTAL);
   }
 
@@ -226,7 +236,7 @@ function enhanceSelect(nativeSel, items) {
   });
 }
 
-/* ---------- Visuals for usage meter & dot ---------- */
+/* VISUALS */
 function setUsageVisuals(count) {
   const ratio = count / MAX_CONCURRENT;
   document.documentElement.style.setProperty("--usage", String(ratio));
@@ -234,16 +244,12 @@ function setUsageVisuals(count) {
   dot.classList.remove("state-0","state-1","state-2","state-3");
   dot.classList.add(`state-${state}`);
 }
-
-/* ---------- Active list rendering ---------- */
 function renderActiveList(active) {
   const me = whoSel.value;
   listEl.innerHTML = active.length
     ? active.map(n => `<li class="name ${n === me ? "on" : ""}" data-name="${n}" tabindex="0">${n}</li>`).join("")
     : `<li class="muted">${t("nobody")}</li>`;
 }
-
-/* ---------- Buttons enable/disable ---------- */
 function updateButtons(active) {
   const me = whoSel.value;
   const iAmUsing = active.includes(me);
@@ -251,50 +257,34 @@ function updateButtons(active) {
   stopBtn.disabled  = !iAmUsing;
 }
 
-/* ---------- Toast & inline message ---------- */
-let toastTimer;
-let msgTimer;
-
+/* Toast (optional) */
 function showToast(text, kind = "ok", holdMs = 1000) {
   if (!TOAST_ENABLED || !toastEl) return;
   toastEl.textContent = text;
   toastEl.classList.remove("ok", "err");
   toastEl.classList.add("show", kind);
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toastEl.classList.remove("show"), Math.max(holdMs, 1));
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(() => toastEl.classList.remove("show"), Math.max(holdMs, 1));
 }
 
-function setMsg(text, isError = false, holdMs = 1500) {
-  if (!msgEl) return;
-  msgEl.textContent = text || "";
-  msgEl.classList.toggle("err", !!isError);
-  msgEl.classList.toggle("show", !!text);
-  clearTimeout(msgTimer);
-  if (text) msgTimer = setTimeout(() => msgEl.classList.remove("show"), Math.max(holdMs, 1));
-}
-
-/* =============================== FUN BITS ============================== */
+/* FX */
 function confettiBurst(x = window.innerWidth / 2, y = appEl.getBoundingClientRect().top + 60) {
   if (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) return;
   const n = 22, base = 900;
   for (let i = 0; i < n; i++) {
     const p = document.createElement("div");
     p.style.position = "fixed";
-    p.style.left = `${x}px`;
-    p.style.top  = `${y}px`;
+    p.style.left = `${x}px`; p.style.top  = `${y}px`;
     p.style.width = "6px"; p.style.height = "10px";
     p.style.borderRadius = "2px";
     p.style.background = `hsl(${Math.random() * 360}, 90%, 65%)`;
-    p.style.pointerEvents = "none";
-    p.style.zIndex = 9999;
+    p.style.pointerEvents = "none"; p.style.zIndex = 9999;
     document.body.appendChild(p);
-
     const angle = Math.random() * Math.PI * 2;
     const speed = 6 + Math.random() * 7;
     const vx = Math.cos(angle) * speed;
     const vy = Math.sin(angle) * speed - 6;
     const rot = (Math.random() * 720 - 360);
-
     p.animate(
       [{ transform: `translate(0,0) rotate(0deg)`, opacity: 1 },
        { transform: `translate(${vx * 14}px, ${vy * 14}px) rotate(${rot}deg)`, opacity: 0 }],
@@ -302,28 +292,23 @@ function confettiBurst(x = window.innerWidth / 2, y = appEl.getBoundingClientRec
     ).onfinish = () => p.remove();
   }
 }
-
 function stopPoof(x = window.innerWidth / 2, y = appEl.getBoundingClientRect().top + 60) {
   if (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) return;
   const n = 12, base = 700;
   for (let i = 0; i < n; i++) {
     const p = document.createElement("div");
     p.style.position = "fixed";
-    p.style.left = `${x}px`;
-    p.style.top  = `${y}px`;
+    p.style.left = `${x}px`; p.style.top  = `${y}px`;
     p.style.width = "8px"; p.style.height = "8px";
     p.style.borderRadius = "50%";
     p.style.background = `hsl(${Math.random() * 360}, 85%, 75%)`;
-    p.style.pointerEvents = "none";
-    p.style.zIndex = 9999;
+    p.style.pointerEvents = "none"; p.style.zIndex = 9999;
     document.body.appendChild(p);
-
     const angle = (Math.random() * Math.PI) + Math.PI;
     const speed = 2 + Math.random() * 3;
     const vx = Math.cos(angle) * speed;
     const vy = Math.sin(angle) * speed + 1.5;
     const scaleEnd = 0.4 + Math.random() * 0.4;
-
     p.animate(
       [{ transform: "translate(0,0) scale(1)", opacity: 0.9 },
        { transform: `translate(${vx * 30}px, ${vy * 36}px) scale(${scaleEnd})`, opacity: 0 }],
@@ -332,7 +317,7 @@ function stopPoof(x = window.innerWidth / 2, y = appEl.getBoundingClientRect().t
   }
 }
 
-/* ================================ ACTIONS ============================== */
+/* ACTIONS */
 async function startUsing() {
   const me = whoSel.value;
   if (isBusy) return;
@@ -340,127 +325,110 @@ async function startUsing() {
   startBtn.disabled = true;
 
   try {
-    if (activeCache.includes(me)) { setMsg(t("already_using"), false, 1200); return; }
+    if (activeCache.includes(me)) { setI18nMsg("already_using", {}, false, 1200); return; }
     if (activeCache.length >= MAX_CONCURRENT) {
-      setMsg(t("cannot_start_full", { count: activeCache.length, max: MAX_CONCURRENT }), true, 1400);
-      alert(t("full_now", { count: activeCache.length, max: MAX_CONCURRENT }));
+      setI18nMsg("full_now", { count: activeCache.length, max: MAX_CONCURRENT }, true, 3000);
       return;
     }
+    const key = activeCache.length === MAX_CONCURRENT - 1 ? "last_slot" : "reserving";
+    setI18nMsg(key, {}, false, 1000);
 
-    setMsg(activeCache.length === MAX_CONCURRENT - 1 ? t("last_slot") : t("reserving"), false, 1000);
     await txStart(me, MAX_CONCURRENT);
-    setMsg(t("now_using"), false, 1200);
+    setI18nMsg("now_using", {}, false, 1200);
     showBanner(t("banner_start"), "start");
     confettiBurst();
   } catch (e) {
     if (e?.message === "FULL") {
-      setMsg(t("full_now", { count: activeCache.length, max: MAX_CONCURRENT }), true, 1400);
-      alert(t("full_now", { count: activeCache.length, max: MAX_CONCURRENT }));
+      setI18nMsg("full_now", { count: activeCache.length, max: MAX_CONCURRENT }, true, 3000);
     } else {
       console.error(e);
-      setMsg(t("error_generic"), true, 1400);
+      setI18nMsg("error_generic", {}, true, 1400);
     }
   } finally {
     isBusy = false;
   }
 }
-
 async function stopUsing() {
   const me = whoSel.value;
   try {
     await txStop(me);
-    setMsg(t("now_not_using"), false, 1200);
+    setI18nMsg("now_not_using", {}, false, 1200);
     showBanner(t("banner_stop"), "stop");
     stopPoof();
   } catch (e) {
     console.error(e);
-    setMsg(t("error_generic"), true, 1400);
+    setI18nMsg("error_generic", {}, true, 1400);
   }
 }
 
-/* ============================ ACTIVE CHIP UX =========================== */
-/** Robust delegation to stop when clicking your own active chip */
+/* ACTIVE CHIP UX */
 function initActiveChipHandlers() {
   if (!listEl) return;
 
-  // Click to stop (own chip only)
   listEl.addEventListener("click", (e) => {
-    // Guard Text nodes
     const tgt = e.target instanceof Element ? e.target : e.target?.parentElement;
     const li  = tgt?.closest?.(".name");
     if (!li) return;
-
     const me   = whoSel.value;
     const name = li.dataset.name || li.textContent.trim();
-    if (li.classList.contains("on") && name === me) {
-      stopUsing();
-    }
+    if (li.classList.contains("on") && name === me) stopUsing();
   });
 
-  // Keyboard support (Enter/Space on focused chip)
   listEl.addEventListener("keydown", (e) => {
     if (e.key !== "Enter" && e.key !== " ") return;
     const tgt = e.target instanceof Element ? e.target : e.target?.parentElement;
     const li  = tgt?.closest?.(".name.on");
     if (!li) return;
-
     const me   = whoSel.value;
     const name = li.dataset.name || li.textContent.trim();
-    if (name === me) {
-      e.preventDefault();
-      stopUsing();
-    }
+    if (name === me) { e.preventDefault(); stopUsing(); }
   });
 }
 
-/* ================================== BOOT =============================== */
+/* BOOT */
 export function startApp() {
-  // Splash muting for header controls
   document.body.classList.add("splash-on");
 
-  // Theme
   initTheme();
   themeBtn?.addEventListener("click", () => {
     const cur = document.documentElement.getAttribute("data-theme") || "dark";
     applyTheme(cur === "dark" ? "light" : "dark");
   });
 
-  // i18n
   if (langSel) {
     initI18n(langSel);
+
+    // Cross-tab locale sync
     window.addEventListener("storage", (e) => {
-      if (e.key === "wm.locale") window.dispatchEvent(new Event("wm:localechange"));
+      if (e.key === "wm.locale" && e.newValue) setLocale(e.newValue);
     });
+
+    // Translate static bits on locale change
     const rerender = () => {
       renderActiveList(activeCache);
       startBtn.textContent = t("start");
       stopBtn.textContent  = t("stop");
-      window.dispatchEvent(new Event("wm:localechange"));
+      // #msg re-renders via applyTranslations, because we stamped data-i18n on it
     };
     window.addEventListener("wm:localechange", rerender);
   }
 
-  // Splash interactions
   splash.addEventListener("click", showConsole);
   enterBtn.addEventListener("click", (e) => { e.stopPropagation(); showConsole(); });
   splash.addEventListener("keydown", (e) => {
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); showConsole(); }
   });
 
-  // Initial UI
   populateNames();
   enhanceSelect(whoSel, MEMBERS);
   limitEls.forEach(el => el && (el.textContent = MAX_CONCURRENT));
 
-  // Firestore bootstrap + subscription
   ensureStatusDoc().then(() => {
     listenStatus((active) => {
       const prev = parseInt(countEl.textContent || "0", 10);
       countEl.textContent = active.length;
       if (active.length !== prev) {
-        countEl.classList.remove("bump");
-        void countEl.offsetWidth; // restart bump anim
-        countEl.classList.add("bump");
+        countEl.classList.remove("bump"); void countEl.offsetWidth; countEl.classList.add("bump");
       }
 
       activeCache = active;
@@ -473,33 +441,28 @@ export function startApp() {
       const isFull = active.length >= MAX_CONCURRENT;
 
       if (isFull && !iAmUsing && !wasFull) {
-        setMsg(t("full_now", { count: active.length, max: MAX_CONCURRENT }), true, 3000);
+        setI18nMsg("full_now", { count: active.length, max: MAX_CONCURRENT }, true, 3000);
       } else if (!isFull && wasFull) {
-        setMsg(t("slot_opened"), false, 2000);
+        setI18nMsg("slot_opened", {}, false, 2000);
       } else {
-        setMsg("", false, 1000);
+        setI18nMsg(null);
       }
       wasFull = isFull;
     });
   });
 
-  // Controls
   whoSel.addEventListener("change", () => {
     const me = whoSel.value;
     const iAmUsing = activeCache.includes(me);
     startBtn.disabled = iAmUsing || activeCache.length >= MAX_CONCURRENT;
     stopBtn.disabled  = !iAmUsing;
-    renderActiveList(activeCache); // refresh “on” highlight
-    setMsg("", false, 1000);
+    renderActiveList(activeCache);
+    setI18nMsg(null);
   });
 
-  // Active chip handlers (click/keyboard)
   initActiveChipHandlers();
-
-  // Start/Stop buttons
   startBtn.addEventListener("click", startUsing);
   stopBtn.addEventListener("click", stopUsing);
 
-  // Best-effort relinquish on tab close
   window.addEventListener("beforeunload", () => { try { txStop(whoSel.value); } catch {} });
 }

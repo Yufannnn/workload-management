@@ -272,9 +272,12 @@ export function applyTranslations() {
   document.querySelectorAll("[data-i18n]").forEach((el) => {
     const key = el.dataset.i18n;
     const owner = el.dataset.owner || "Yufannnn";
-    const raw = t(key, { max, year, owner });
+    let extra = {};
+    if (el.dataset.i18nVars) {
+      try { extra = JSON.parse(el.dataset.i18nVars); } catch {}
+    }
+    const raw = t(key, { max, year, owner, ...extra });
 
-    // If the string has markup (like the intro), use innerHTML; else textContent
     if (/[<>&]/.test(raw)) el.innerHTML = raw;
     else el.textContent = raw;
   });
