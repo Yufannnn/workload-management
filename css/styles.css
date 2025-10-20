@@ -53,6 +53,11 @@ body{
     url("../assets/background.jpg") center / cover no-repeat fixed;
 }
 
+/* Console view: remove grid + color gradient (keep photo only) */
+body:has(.app.show){
+  background: url("../assets/background.jpg") center / cover no-repeat fixed;
+}
+
 
 /* ============== 03) UTILITIES ========================== */
 .visually-hidden{
@@ -177,8 +182,8 @@ label {
 
 /* keep hint pinned at bottom-right, with breathing room */
 .card .hint.muted {
-  margin-top: auto;          /* push to bottom */
-  padding-top: var(--footer-gap); /* create space from content above */
+  margin-top: auto;               /* push to bottom */
+  padding-top: var(--footer-gap); /* space from content above */
   margin-bottom: 0;
   text-align: right;
 }
@@ -257,6 +262,8 @@ button:disabled{ opacity:.55; cursor:not-allowed }
 #lang option{ background:#0b1226; color:var(--ink); }
 
 
+/* ============== 09) CUSTOM “COOL SELECT” (#who) + PORTAL ============= */
+
 /* Dropdown list (always vertical, 1 column) */
 .cool-select__list{
   position: absolute;
@@ -314,7 +321,6 @@ button:disabled{ opacity:.55; cursor:not-allowed }
 .cool-option:hover{ background:#0c1226 }
 .cool-option:focus{ outline:2px solid rgba(139,92,246,.55); outline-offset:2px }
 
-/* Reduced motion */
 @media (prefers-reduced-motion: reduce){
   .cool-select__chev::before{ animation:none }
 }
